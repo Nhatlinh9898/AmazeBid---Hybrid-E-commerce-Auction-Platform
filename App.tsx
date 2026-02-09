@@ -451,7 +451,7 @@ const InnerApp: React.FC = () => {
                   <span className="text-gray-500 font-medium">Tổng cộng tạm tính:</span>
                   <div className="text-right">
                     <p className="text-2xl font-bold text-[#b12704]">${totalAmount.toFixed(2)}</p>
-                    <p className="text-[10px] text-gray-400 uppercase tracking-widest">Đã bao gồm thuế</p>
+                    <p className="text-xs text-gray-400 uppercase tracking-widest">Đã bao gồm thuế</p>
                   </div>
                 </div>
                 <button 
@@ -542,6 +542,7 @@ const InnerApp: React.FC = () => {
         isOpen={isContentStudioOpen}
         onClose={() => setIsContentStudioOpen(false)}
         onSavePost={handleAddContentPost}
+        myProducts={myProducts}
       />
 
       {/* Notification Toast */}

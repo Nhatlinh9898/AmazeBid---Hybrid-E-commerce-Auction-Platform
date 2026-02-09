@@ -51,6 +51,36 @@ export const getShoppingAdvice = async (query: string, products: Product[]) => {
 
 // --- New Content Creation Services ---
 
+export const generateKeywordSuggestions = async (productName: string, description: string) => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: `Hãy đóng vai chuyên gia SEO. Dựa trên tên sản phẩm: "${productName}" và mô tả: "${description}".
+      Hãy liệt kê chính xác 20 từ khóa SEO (keywords) có lưu lượng tìm kiếm cao, bao gồm cả từ khóa ngắn và từ khóa dài (long-tail).
+      
+      Yêu cầu định dạng trả về: Chỉ trả về một mảng JSON thuần túy chứa danh sách các chuỗi (strings). Không thêm markdown code block, không thêm giải thích.
+      Ví dụ: ["từ khóa 1", "từ khóa 2", ...]`,
+      config: {
+        responseMimeType: "application/json",
+      }
+    });
+
+    try {
+        const text = response.text?.replace(/```json|```/g, '').trim();
+        if (text) return JSON.parse(text) as string[];
+        return [];
+    } catch (e) {
+        console.error("JSON Parse Error", e);
+        return [];
+    }
+  } catch (error) {
+    console.error("Keyword Gen Error:", error);
+    return [];
+  }
+};
+
 export const generateSEOContent = async (productName: string, keywords: string, tone: string) => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   

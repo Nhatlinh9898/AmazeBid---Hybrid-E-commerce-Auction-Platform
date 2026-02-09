@@ -1,25 +1,33 @@
 
 import React, { useState, useRef } from 'react';
-import { X, PenTool, Image as ImageIcon, Video, Share2, Sparkles, LayoutTemplate, Save, Download, ChevronRight, Wand2, Globe, CheckCircle2, Copy } from 'lucide-react';
-import { generateSEOContent, generateProductImage, generateProductVideo } from '../services/geminiService';
-import { ContentPost } from '../types';
+import { X, PenTool, Image as ImageIcon, Video, Share2, Sparkles, LayoutTemplate, Save, Download, ChevronRight, Wand2, Globe, CheckCircle2, Copy, ShoppingBag, Plus } from 'lucide-react';
+import { generateSEOContent, generateProductImage, generateProductVideo, generateKeywordSuggestions } from '../services/geminiService';
+import { ContentPost, Product } from '../types';
 
 interface ContentStudioModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSavePost?: (post: ContentPost) => void;
+  myProducts?: Product[];
 }
 
-const ContentStudioModal: React.FC<ContentStudioModalProps> = ({ isOpen, onClose, onSavePost }) => {
+const ContentStudioModal: React.FC<ContentStudioModalProps> = ({ isOpen, onClose, onSavePost, myProducts = [] }) => {
   // Steps: 1=Info, 2=Text, 3=Visuals, 4=Review
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
 
   // Data State
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [productName, setProductName] = useState('');
+  const [description, setDescription] = useState('');
   const [keywords, setKeywords] = useState('');
   const [tone, setTone] = useState('Chuyên nghiệp & Tin cậy');
   
+  // Keyword Generation State
+  const [suggestedKeywords, setSuggestedKeywords] = useState<string[]>([]);
+  const [isGeneratingKeywords, setIsGeneratingKeywords] = useState(false);
+  const [isProductListOpen, setIsProductListOpen] = useState(false);
+
   const [generatedContent, setGeneratedContent] = useState('');
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
   const [generatedVideo, setGeneratedVideo] = useState<string | null>(null);
@@ -31,6 +39,38 @@ const ContentStudioModal: React.FC<ContentStudioModalProps> = ({ isOpen, onClose
   if (!isOpen) return null;
 
   // --- Handlers ---
+
+  const handleSelectProduct = (product: Product) => {
+      setSelectedProduct(product);
+      setProductName(product.title);
+      setDescription(product.description);
+      setIsProductListOpen(false);
+      // Reset generated data
+      setSuggestedKeywords([]);
+      setGeneratedImages([]);
+  };
+
+  const handleGenerateKeywords = async () => {
+      if (!productName) return;
+      setIsGeneratingKeywords(true);
+      try {
+          const list = await generateKeywordSuggestions(productName, description || productName);
+          setSuggestedKeywords(list);
+      } catch(e) {
+          alert("Lỗi tạo từ khóa.");
+      } finally {
+          setIsGeneratingKeywords(false);
+      }
+  };
+
+  const toggleKeyword = (kw: string) => {
+      const current = keywords ? keywords.split(',').map(k => k.trim()) : [];
+      if (current.includes(kw)) {
+          setKeywords(current.filter(k => k !== kw).join(', '));
+      } else {
+          setKeywords([...current, kw].join(', '));
+      }
+  };
 
   const handleGenerateText = async () => {
     if (!productName) return;
@@ -100,53 +140,118 @@ const ContentStudioModal: React.FC<ContentStudioModalProps> = ({ isOpen, onClose
   // --- Render Steps ---
 
   const renderStep1_Info = () => (
-      <div className="space-y-6 animate-in slide-in-from-right">
+      <div className="space-y-6 animate-in slide-in-from-right relative h-full flex flex-col">
           <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 flex gap-3">
               <Sparkles className="text-blue-600 shrink-0" />
               <div>
                   <h3 className="font-bold text-blue-800">Bắt đầu ý tưởng</h3>
-                  <p className="text-sm text-blue-700">AI sẽ tự động thu thập thông tin sản phẩm từ Google Search để viết bài chuẩn SEO.</p>
+                  <p className="text-sm text-blue-700">Chọn sản phẩm từ kho của bạn hoặc nhập chủ đề mới để AI viết bài chuẩn SEO.</p>
               </div>
           </div>
 
-          <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Tên sản phẩm / Chủ đề</label>
-              <input 
-                value={productName}
-                onChange={e => setProductName(e.target.value)}
-                placeholder="VD: iPhone 15 Pro Max, Nồi chiên không dầu Philips..."
-                className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-[#febd69] outline-none font-medium"
-              />
-          </div>
+          <div className="flex-1 overflow-y-auto pr-2 space-y-6">
+            <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">Sản phẩm / Chủ đề</label>
+                <div className="flex gap-2">
+                    <input 
+                        value={productName}
+                        onChange={e => setProductName(e.target.value)}
+                        placeholder="VD: iPhone 15 Pro Max..."
+                        className="flex-1 p-3 border-2 border-gray-200 rounded-xl focus:border-[#febd69] outline-none font-medium"
+                    />
+                    <button 
+                        onClick={() => setIsProductListOpen(!isProductListOpen)}
+                        className="px-4 bg-gray-100 hover:bg-gray-200 rounded-xl font-bold text-sm text-gray-700 flex items-center gap-2 whitespace-nowrap"
+                    >
+                        <ShoppingBag size={18}/> Chọn từ kho
+                    </button>
+                </div>
+                
+                {/* Product Select Dropdown */}
+                {isProductListOpen && (
+                    <div className="mt-2 border border-gray-200 rounded-xl shadow-lg bg-white max-h-60 overflow-y-auto absolute z-50 w-full left-0 right-0 max-w-2xl mx-auto">
+                        {myProducts.length === 0 ? (
+                            <p className="p-4 text-center text-gray-400 text-sm">Kho hàng trống.</p>
+                        ) : (
+                            myProducts.map(p => (
+                                <div 
+                                    key={p.id} 
+                                    onClick={() => handleSelectProduct(p)}
+                                    className="p-3 hover:bg-blue-50 cursor-pointer flex items-center gap-3 border-b border-gray-100"
+                                >
+                                    <img src={p.image} className="w-10 h-10 rounded object-cover bg-gray-100"/>
+                                    <div className="flex-1">
+                                        <p className="font-bold text-sm text-gray-800">{p.title}</p>
+                                        <p className="text-xs text-gray-500 truncate">{p.description}</p>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                )}
+            </div>
 
-          <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Từ khóa SEO (ngăn cách bởi dấu phẩy)</label>
-              <input 
-                value={keywords}
-                onChange={e => setKeywords(e.target.value)}
-                placeholder="VD: giá rẻ, chính hãng, review chi tiết, khuyến mãi..."
-                className="w-full p-3 border border-gray-200 rounded-xl focus:border-[#febd69] outline-none"
-              />
-          </div>
+            <div>
+                <div className="flex justify-between items-center mb-2">
+                    <label className="block text-sm font-bold text-gray-700">Từ khóa SEO</label>
+                    <button 
+                        onClick={handleGenerateKeywords}
+                        disabled={!productName || isGeneratingKeywords}
+                        className="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1"
+                    >
+                        <Wand2 size={12}/> {isGeneratingKeywords ? 'Đang phân tích...' : 'Gợi ý từ khóa AI'}
+                    </button>
+                </div>
+                
+                <input 
+                    value={keywords}
+                    onChange={e => setKeywords(e.target.value)}
+                    placeholder="VD: giá rẻ, chính hãng, review chi tiết..."
+                    className="w-full p-3 border border-gray-200 rounded-xl focus:border-[#febd69] outline-none mb-3"
+                />
 
-          <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Giọng văn (Tone of Voice)</label>
-              <select 
-                value={tone}
-                onChange={e => setTone(e.target.value)}
-                className="w-full p-3 border border-gray-200 rounded-xl bg-white outline-none"
-              >
-                  <option>Chuyên nghiệp & Tin cậy</option>
-                  <option>Hài hước & Thân thiện</option>
-                  <option>Sang trọng & Đẳng cấp</option>
-                  <option>Ngắn gọn & Súc tích</option>
-              </select>
+                {/* Keyword Chips */}
+                {suggestedKeywords.length > 0 && (
+                    <div className="flex flex-wrap gap-2 p-3 bg-gray-50 rounded-xl border border-dashed border-gray-300">
+                        {suggestedKeywords.map((kw, idx) => {
+                            const isSelected = keywords.includes(kw);
+                            return (
+                                <button
+                                    key={idx}
+                                    onClick={() => toggleKeyword(kw)}
+                                    className={`px-3 py-1 rounded-full text-xs font-bold transition-all border ${
+                                        isSelected 
+                                        ? 'bg-blue-100 text-blue-700 border-blue-200' 
+                                        : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
+                                    }`}
+                                >
+                                    {kw} {isSelected && <CheckCircle2 size={10} className="inline ml-1"/>}
+                                </button>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+
+            <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">Giọng văn (Tone of Voice)</label>
+                <select 
+                    value={tone}
+                    onChange={e => setTone(e.target.value)}
+                    className="w-full p-3 border border-gray-200 rounded-xl bg-white outline-none"
+                >
+                    <option>Chuyên nghiệp & Tin cậy</option>
+                    <option>Hài hước & Thân thiện</option>
+                    <option>Sang trọng & Đẳng cấp</option>
+                    <option>Ngắn gọn & Súc tích</option>
+                </select>
+            </div>
           </div>
 
           <button 
             onClick={handleGenerateText}
             disabled={!productName || isLoading}
-            className="w-full bg-[#131921] text-white py-4 rounded-xl font-bold hover:bg-black transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+            className="w-full bg-[#131921] text-white py-4 rounded-xl font-bold hover:bg-black transition-all flex items-center justify-center gap-2 disabled:opacity-50 mt-auto"
           >
               {isLoading ? <Wand2 className="animate-spin"/> : <PenTool size={20}/>}
               {isLoading ? 'AI Đang Viết...' : 'Tạo Bài Viết Ngay'}
@@ -183,6 +288,25 @@ const ContentStudioModal: React.FC<ContentStudioModalProps> = ({ isOpen, onClose
               <h3 className="font-bold text-lg flex items-center gap-2 mb-4">
                   <ImageIcon className="text-blue-600"/> Studio Hình ảnh (Imagen 3)
               </h3>
+              
+              {selectedProduct && (
+                  <div className="mb-4 p-4 bg-gray-50 rounded-xl border border-gray-200 flex items-start gap-4">
+                      <div className="w-20 h-20 rounded-lg overflow-hidden shrink-0 border border-gray-300">
+                          <img src={selectedProduct.image} className="w-full h-full object-cover" />
+                      </div>
+                      <div className="flex-1">
+                          <h4 className="font-bold text-sm text-gray-800">Ảnh gốc sản phẩm</h4>
+                          <p className="text-xs text-gray-500 mb-2">Sử dụng AI để sáng tạo lại hình ảnh này với phong cách chuyên nghiệp hơn.</p>
+                          <button 
+                            onClick={() => setImagePrompt(`Creative product photography of ${productName}, luxury studio lighting, 8k resolution, cinematic, showing details of ${description.slice(0, 50)}...`)}
+                            className="text-xs bg-white border border-gray-300 px-3 py-1.5 rounded-lg font-bold hover:bg-gray-100 flex items-center gap-1"
+                          >
+                              <Sparkles size={12} className="text-[#febd69]"/> Tạo Prompt "Re-imagine"
+                          </button>
+                      </div>
+                  </div>
+              )}
+
               <div className="flex gap-2 mb-4">
                   <input 
                     value={imagePrompt}
