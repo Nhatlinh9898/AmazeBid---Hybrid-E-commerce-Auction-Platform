@@ -21,6 +21,27 @@ export interface Bid {
   timestamp: string;
 }
 
+export interface PaymentMethod {
+  id: string;
+  type: 'BANK' | 'CARD' | 'WALLET';
+  providerName: string; // Vietcombank, Visa, Momo
+  accountNumber: string; // Will be masked in UI
+  holderName: string;
+  isDefault: boolean;
+}
+
+export interface User {
+  id: string;
+  fullName: string;
+  email: string;
+  phone?: string;
+  avatar: string;
+  address?: string;
+  joinDate: string;
+  balance: number; // For wallet
+  paymentMethods: PaymentMethod[];
+}
+
 export interface Product {
   id: string;
   title: string;

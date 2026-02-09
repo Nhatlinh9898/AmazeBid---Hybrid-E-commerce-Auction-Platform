@@ -6,13 +6,18 @@ import GeminiAssistant from './components/GeminiAssistant';
 import SellModal from './components/SellModal';
 import OrderDashboard from './components/OrderDashboard';
 import LiveStreamViewer from './components/LiveStreamViewer';
-import CreateStreamModal from './components/CreateStreamModal'; // New Import
+import CreateStreamModal from './components/CreateStreamModal'; 
 import BidModal from './components/BidModal';
+import AuthModal from './components/AuthModal'; // New
+import UserProfile from './components/UserProfile'; // New
+import { AuthProvider, useAuth } from './context/AuthContext'; // New
+
 import { MOCK_PRODUCTS, MOCK_STREAMS } from './data';
 import { Product, CartItem, ItemType, OrderStatus, LiveStream, Bid } from './types';
 import { ShoppingBag, ChevronRight, X, Minus, Plus, Trash2, Sparkles, Filter, PackageSearch, ShieldCheck, PlayCircle, User } from 'lucide-react';
 
-const App: React.FC = () => {
+const InnerApp: React.FC = () => {
+  const { user } = useAuth();
   const [products, setProducts] = useState<Product[]>(MOCK_PRODUCTS);
   const [streams, setStreams] = useState<LiveStream[]>(MOCK_STREAMS);
   const [searchTerm, setSearchTerm] = useState('');
@@ -25,7 +30,9 @@ const App: React.FC = () => {
   const [isSellModalOpen, setIsSellModalOpen] = useState(false);
   const [isOrderDashboardOpen, setIsOrderDashboardOpen] = useState(false);
   const [bidModalProduct, setBidModalProduct] = useState<Product | null>(null);
-  const [isCreateStreamModalOpen, setIsCreateStreamModalOpen] = useState(false); // New state for setup modal
+  const [isCreateStreamModalOpen, setIsCreateStreamModalOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   // Live Stream States
   const [activeStream, setActiveStream] = useState<LiveStream | null>(null);
@@ -63,16 +70,21 @@ const App: React.FC = () => {
   };
 
   const handleOpenBidModal = (product: Product) => {
+    if (!user) {
+        setIsAuthModalOpen(true);
+        return;
+    }
     setBidModalProduct(product);
   };
 
   const handleSubmitBid = (product: Product, amount: number) => {
+    if (!user) return;
     setProducts(prev => prev.map(p => {
         if (p.id === product.id) {
             const newBid: Bid = {
                 id: `bid_${Date.now()}`,
-                userId: 'currentUser',
-                userName: 'Bạn',
+                userId: user.id,
+                userName: user.fullName.split(' ').pop() || 'User',
                 amount: amount,
                 timestamp: new Date().toISOString()
             };
@@ -115,12 +127,23 @@ const App: React.FC = () => {
   };
 
   const handleAddProduct = (newProduct: Product) => {
-    setProducts(prev => [newProduct, ...prev]);
+    if (!user) {
+        setIsAuthModalOpen(true);
+        return;
+    }
+    // Override sellerId with current user
+    const productWithUser = { ...newProduct, sellerId: user.id };
+    setProducts(prev => [productWithUser, ...prev]);
     showNotification(`Niêm yết "${newProduct.title}" thành công!`);
   };
 
   const handleCreateStream = (streamData: Partial<LiveStream>) => {
+    if (!user) return;
     const newStream = streamData as LiveStream;
+    // Override host info
+    newStream.hostName = user.fullName;
+    newStream.hostAvatar = user.avatar;
+    
     setStreams(prev => [newStream, ...prev]);
     setIsCreateStreamModalOpen(false);
     
@@ -131,6 +154,10 @@ const App: React.FC = () => {
   };
 
   const handleCheckout = () => {
+    if (!user) {
+        setIsAuthModalOpen(true);
+        return;
+    }
     const boughtIds = cart.map(c => c.id);
     setProducts(prev => prev.map(p => {
       if (boughtIds.includes(p.id)) return { ...p, status: OrderStatus.PENDING_SHIPMENT };
@@ -173,11 +200,16 @@ const App: React.FC = () => {
         openCart={() => setIsCartOpen(true)}
         openSellModal={() => setIsSellModalOpen(true)}
         openOrders={() => setIsOrderDashboardOpen(true)}
-        onOpenLiveStudio={() => setIsCreateStreamModalOpen(true)}
+        onOpenLiveStudio={() => {
+            if(user) setIsCreateStreamModalOpen(true);
+            else setIsAuthModalOpen(true);
+        }}
         onViewLiveStreams={() => {
             setShowLiveList(!showLiveList);
             if (!showLiveList) window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
+        onOpenAuth={() => setIsAuthModalOpen(true)}
+        onOpenProfile={() => setIsProfileOpen(true)}
       />
 
       <main className="max-w-[1500px] mx-auto px-4 py-6">
@@ -234,7 +266,7 @@ const App: React.FC = () => {
                 <p className="text-sm md:text-lg text-gray-200 font-medium max-w-lg mb-6">Bảo vệ người mua và người bán với hệ thống thanh toán tạm giữ (Escrow) an toàn tuyệt đối.</p>
                 <div className="flex gap-4">
                 <button 
-                    onClick={() => setIsSellModalOpen(true)}
+                    onClick={() => user ? setIsSellModalOpen(true) : setIsAuthModalOpen(true)}
                     className="bg-[#febd69] text-black font-bold px-6 py-3 rounded-lg hover:bg-[#f3a847] transition-all transform hover:-translate-y-1 shadow-lg"
                 >
                     Đăng bán ngay
@@ -428,7 +460,7 @@ const App: React.FC = () => {
         <CreateStreamModal 
           onClose={() => setIsCreateStreamModalOpen(false)}
           onStartStream={handleCreateStream}
-          myProducts={products.filter(p => p.sellerId === 'currentUser')}
+          myProducts={products.filter(p => p.sellerId === user?.id)}
           onOpenSellModal={() => setIsSellModalOpen(true)}
         />
       )}
@@ -447,7 +479,7 @@ const App: React.FC = () => {
         isOpen={isOrderDashboardOpen}
         onClose={() => setIsOrderDashboardOpen(false)}
         products={products}
-        currentUserId="currentUser"
+        currentUserId={user?.id || 'guest'}
         onUpdateStatus={handleOrderStatusUpdate}
       />
 
@@ -466,6 +498,18 @@ const App: React.FC = () => {
           />
       )}
 
+      {/* Auth Modal */}
+      <AuthModal 
+        isOpen={isAuthModalOpen} 
+        onClose={() => setIsAuthModalOpen(false)} 
+      />
+
+      {/* User Profile */}
+      <UserProfile 
+        isOpen={isProfileOpen} 
+        onClose={() => setIsProfileOpen(false)} 
+      />
+
       {/* Notification Toast */}
       {notification && (
         <div className="fixed top-28 left-1/2 -translate-x-1/2 z-[300] bg-[#131921] text-white px-8 py-3 rounded-2xl shadow-2xl animate-in fade-in slide-in-from-top-4 border-2 border-[#febd69] flex items-center gap-3">
@@ -480,5 +524,13 @@ const App: React.FC = () => {
     </div>
   );
 };
+
+const App: React.FC = () => {
+    return (
+        <AuthProvider>
+            <InnerApp />
+        </AuthProvider>
+    )
+}
 
 export default App;

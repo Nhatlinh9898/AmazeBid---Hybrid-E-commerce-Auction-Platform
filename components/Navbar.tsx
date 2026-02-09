@@ -1,6 +1,7 @@
 
-import React from 'react';
-import { Search, ShoppingCart, User, MapPin, Gavel, LayoutGrid, PlusCircle, Package, Video } from 'lucide-react';
+import React, { useState } from 'react';
+import { Search, ShoppingCart, User as UserIcon, MapPin, Gavel, LayoutGrid, PlusCircle, Package, Video, LogIn, ChevronDown } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 interface NavbarProps {
   cartCount: number;
@@ -10,9 +11,17 @@ interface NavbarProps {
   openOrders: () => void;
   onOpenLiveStudio: () => void;
   onViewLiveStreams: () => void;
+  onOpenAuth: () => void;
+  onOpenProfile: () => void;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ cartCount, onSearch, openCart, openSellModal, openOrders, onOpenLiveStudio, onViewLiveStreams }) => {
+const Navbar: React.FC<NavbarProps> = ({ 
+  cartCount, onSearch, openCart, openSellModal, openOrders, 
+  onOpenLiveStudio, onViewLiveStreams, onOpenAuth, onOpenProfile 
+}) => {
+  const { user } = useAuth();
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+
   return (
     <header className="bg-[#131921] text-white sticky top-0 z-50">
       {/* Top Bar */}
@@ -29,7 +38,7 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onSearch, openCart, openSell
           <MapPin size={18} />
           <div className="text-xs">
             <p className="text-gray-400">Giao đến</p>
-            <p className="font-bold">Việt Nam</p>
+            <p className="font-bold">{user?.address ? 'Nhà riêng' : 'Việt Nam'}</p>
           </div>
         </div>
 
@@ -66,7 +75,7 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onSearch, openCart, openSell
 
             {/* Sell Button */}
             <button 
-            onClick={openSellModal}
+            onClick={user ? openSellModal : onOpenAuth}
             className="hidden md:flex items-center gap-2 p-2 border-2 border-[#febd69] rounded hover:bg-[#febd69] hover:text-black transition-all group"
             >
             <PlusCircle size={20} className="text-[#febd69] group-hover:text-black" />
@@ -74,13 +83,37 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onSearch, openCart, openSell
             </button>
         </div>
 
-        {/* Orders & Dashboard */}
+        {/* User Account / Login */}
         <div 
-          onClick={openOrders}
-          className="hidden lg:block p-2 cursor-pointer border border-transparent hover:border-white rounded"
+            onClick={user ? onOpenProfile : onOpenAuth}
+            className="hidden lg:flex items-center gap-2 p-2 cursor-pointer border border-transparent hover:border-white rounded"
         >
-          <p className="text-xs">Quản lý</p>
-          <p className="text-sm font-bold flex items-center">Đơn hàng & Ví <Package size={14} className="ml-1" /></p>
+            {user ? (
+                <>
+                    <img src={user.avatar} className="w-8 h-8 rounded-full border border-gray-500" />
+                    <div className="text-xs">
+                        <p className="text-gray-400">Xin chào,</p>
+                        <p className="font-bold truncate max-w-[80px]">{user.fullName.split(' ').pop()}</p>
+                    </div>
+                </>
+            ) : (
+                <>
+                    <UserIcon size={24} />
+                    <div className="text-xs">
+                        <p className="text-gray-400">Xin chào, khách</p>
+                        <p className="font-bold">Đăng nhập</p>
+                    </div>
+                </>
+            )}
+        </div>
+
+        {/* Orders & Dashboard (Restored for all users) */}
+        <div 
+            onClick={user ? openOrders : onOpenAuth}
+            className="hidden lg:block p-2 cursor-pointer border border-transparent hover:border-white rounded"
+        >
+            <p className="text-xs">Trả hàng &</p>
+            <p className="text-sm font-bold flex items-center">Đơn hàng <Package size={14} className="ml-1" /></p>
         </div>
 
         {/* Cart */}
