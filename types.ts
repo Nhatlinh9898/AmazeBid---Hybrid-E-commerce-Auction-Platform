@@ -30,6 +30,12 @@ export interface PaymentMethod {
   isDefault: boolean;
 }
 
+export interface SocialAccount {
+  provider: 'facebook' | 'google' | 'instagram' | 'twitter';
+  connected: boolean;
+  username?: string;
+}
+
 export interface User {
   id: string;
   fullName: string;
@@ -40,6 +46,11 @@ export interface User {
   joinDate: string;
   balance: number; // For wallet
   paymentMethods: PaymentMethod[];
+  // Social & Referral
+  socialAccounts?: SocialAccount[];
+  referralCode?: string;
+  referredBy?: string;
+  friendCount?: number;
 }
 
 export interface Product {

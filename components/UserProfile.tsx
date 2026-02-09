@@ -1,8 +1,8 @@
 
 import React, { useState } from 'react';
-import { User, CreditCard, ShieldCheck, MapPin, Eye, EyeOff, Edit2, Plus, LogOut, Lock, X } from 'lucide-react';
+import { User, CreditCard, ShieldCheck, MapPin, Eye, EyeOff, Edit2, Plus, LogOut, Lock, X, Share2, Copy, Check, Facebook, Instagram, Chrome, Users, Link } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { PaymentMethod } from '../types';
+import { PaymentMethod, SocialAccount } from '../types';
 
 interface UserProfileProps {
   isOpen: boolean;
@@ -11,8 +11,10 @@ interface UserProfileProps {
 
 const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => {
   const { user, logout, updateProfile } = useAuth();
-  const [activeTab, setActiveTab] = useState<'INFO' | 'PAYMENT' | 'SECURITY'>('INFO');
+  const [activeTab, setActiveTab] = useState<'INFO' | 'PAYMENT' | 'SECURITY' | 'SOCIAL'>('INFO');
   const [showSensitive, setShowSensitive] = useState<Record<string, boolean>>({});
+  const [copied, setCopied] = useState(false);
+  const [friendCodeInput, setFriendCodeInput] = useState('');
 
   if (!isOpen || !user) return null;
 
@@ -37,6 +39,33 @@ const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => {
     updateProfile({
         paymentMethods: [...user.paymentMethods, newPayment]
     });
+  };
+
+  const toggleSocialConnection = (provider: string) => {
+      const currentAccounts = user.socialAccounts || [];
+      const exists = currentAccounts.find(a => a.provider === provider);
+      
+      let newAccounts: SocialAccount[];
+      
+      if (exists) {
+          // Toggle connection state
+          newAccounts = currentAccounts.map(a => 
+              a.provider === provider ? { ...a, connected: !a.connected } : a
+          );
+      } else {
+          // Add new
+          newAccounts = [...currentAccounts, { provider: provider as any, connected: true, username: 'user_connected' }];
+      }
+      
+      updateProfile({ socialAccounts: newAccounts });
+  };
+
+  const handleCopyCode = () => {
+      if (user.referralCode) {
+          navigator.clipboard.writeText(user.referralCode);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+      }
   };
 
   return (
@@ -71,6 +100,12 @@ const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => {
                     <CreditCard size={16} /> Tài khoản thanh toán
                 </button>
                 <button 
+                    onClick={() => setActiveTab('SOCIAL')}
+                    className={`w-full text-left px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-3 ${activeTab === 'SOCIAL' ? 'bg-[#131921] text-white' : 'hover:bg-gray-200 text-gray-600'}`}
+                >
+                    <Share2 size={16} /> Mạng xã hội & Bạn bè
+                </button>
+                <button 
                     onClick={() => setActiveTab('SECURITY')}
                     className={`w-full text-left px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-3 ${activeTab === 'SECURITY' ? 'bg-[#131921] text-white' : 'hover:bg-gray-200 text-gray-600'}`}
                 >
@@ -87,7 +122,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 overflow-y-auto p-8 relative">
+        <div className="flex-1 overflow-y-auto p-8 relative custom-scrollbar">
             <button onClick={onClose} className="absolute top-4 right-4 hover:bg-gray-100 p-2 rounded-full"><X size={20}/></button>
 
             {activeTab === 'INFO' && (
@@ -184,6 +219,94 @@ const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => {
                             <Plus size={20} /> Thêm tài khoản ngân hàng / Thẻ mới
                         </button>
                      </div>
+                </div>
+            )}
+
+            {activeTab === 'SOCIAL' && (
+                <div className="space-y-8 animate-in slide-in-from-right-4">
+                    <div>
+                        <h2 className="text-2xl font-bold mb-4">Liên kết Mạng xã hội</h2>
+                        <p className="text-sm text-gray-500 mb-4">Kết nối tài khoản để đăng nhập nhanh hơn và chia sẻ sản phẩm dễ dàng.</p>
+                        
+                        <div className="space-y-3">
+                            {[
+                                { id: 'facebook', name: 'Facebook', icon: Facebook, color: 'text-blue-600' },
+                                { id: 'google', name: 'Google', icon: Chrome, color: 'text-red-500' },
+                                { id: 'instagram', name: 'Instagram', icon: Instagram, color: 'text-pink-600' }
+                            ].map(platform => {
+                                const account = user.socialAccounts?.find(a => a.provider === platform.id);
+                                const isConnected = account?.connected;
+
+                                return (
+                                    <div key={platform.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-xl bg-white hover:bg-gray-50 transition-colors">
+                                        <div className="flex items-center gap-3">
+                                            <div className={`p-2 rounded-full bg-gray-100 ${platform.color}`}>
+                                                <platform.icon size={20} />
+                                            </div>
+                                            <div>
+                                                <p className="font-bold text-gray-900">{platform.name}</p>
+                                                <p className="text-xs text-gray-500">
+                                                    {isConnected ? (account?.username || 'Đã kết nối') : 'Chưa kết nối'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <button 
+                                            onClick={() => toggleSocialConnection(platform.id)}
+                                            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                                                isConnected 
+                                                ? 'bg-red-50 text-red-600 hover:bg-red-100' 
+                                                : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
+                                            }`}
+                                        >
+                                            {isConnected ? 'Hủy liên kết' : 'Kết nối ngay'}
+                                        </button>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    <div className="border-t border-gray-200 pt-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-2xl font-bold">Giới thiệu bạn bè</h2>
+                            <div className="flex items-center gap-2 px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">
+                                <Users size={14} /> {user.friendCount || 0} Bạn bè
+                            </div>
+                        </div>
+                        
+                        <div className="bg-gradient-to-r from-orange-50 to-white p-6 rounded-2xl border border-orange-100 mb-6">
+                            <h3 className="font-bold text-gray-900 mb-2">Mã giới thiệu của bạn</h3>
+                            <p className="text-sm text-gray-500 mb-4">Chia sẻ mã này để nhận điểm thưởng khi bạn bè đăng ký!</p>
+                            
+                            <div className="flex gap-2">
+                                <div className="flex-1 bg-white border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center p-3 font-mono font-bold text-lg tracking-widest text-[#131921]">
+                                    {user.referralCode || '----'}
+                                </div>
+                                <button 
+                                    onClick={handleCopyCode}
+                                    className="bg-[#131921] text-white px-6 rounded-xl font-bold hover:bg-black transition-all flex items-center gap-2 min-w-[120px] justify-center"
+                                >
+                                    {copied ? <Check size={18} className="text-green-400"/> : <Copy size={18} />}
+                                    {copied ? 'Đã chép' : 'Sao chép'}
+                                </button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 className="font-bold text-sm text-gray-700 mb-2">Nhập mã giới thiệu từ bạn bè</h3>
+                            <div className="flex gap-2">
+                                <input 
+                                    value={friendCodeInput}
+                                    onChange={(e) => setFriendCodeInput(e.target.value.toUpperCase())}
+                                    placeholder="Nhập mã (VD: AMAZE-X-999)"
+                                    className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm uppercase focus:border-[#febd69] outline-none"
+                                />
+                                <button className="bg-gray-200 text-gray-700 font-bold px-4 rounded-lg text-sm hover:bg-gray-300 flex items-center gap-1">
+                                    <Link size={14} /> Liên kết
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             )}
 

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Heart, Send, Gavel, ShoppingCart, User, Share2, Video, Mic, MicOff, Camera, CameraOff, ShoppingBag, CreditCard, CheckCircle2, TrendingUp, Users, VideoOff, ExternalLink } from 'lucide-react';
+import { X, Heart, Send, Gavel, ShoppingCart, User, Share2, Video, Mic, MicOff, Camera, CameraOff, ShoppingBag, CreditCard, CheckCircle2, TrendingUp, Users, VideoOff, ExternalLink, Layers, ChevronRight, ChevronLeft, Link as LinkIcon } from 'lucide-react';
 import { LiveStream, Product, ItemType } from '../types';
 
 interface LiveStreamViewerProps {
@@ -16,6 +16,7 @@ const LiveStreamViewer: React.FC<LiveStreamViewerProps> = ({ stream, products, o
   const [messages, setMessages] = useState<{user: string, text: string}[]>([]);
   const [input, setInput] = useState('');
   const [featuredProduct, setFeaturedProduct] = useState<Product | null>(null);
+  const [showShareToast, setShowShareToast] = useState(false);
   
   // Host Controls
   const [isStreaming, setIsStreaming] = useState(isHost); 
@@ -164,6 +165,44 @@ const LiveStreamViewer: React.FC<LiveStreamViewerProps> = ({ stream, products, o
       onPlaceBid(featuredProduct, nextPrice);
   };
 
+  const handleSwitchProduct = (direction: 'next' | 'prev') => {
+    if (!featuredProduct || currentProducts.length <= 1) return;
+    const currentIndex = currentProducts.findIndex(p => p.id === featuredProduct.id);
+    let nextIndex = 0;
+    
+    if (direction === 'next') {
+        nextIndex = (currentIndex + 1) % currentProducts.length;
+    } else {
+        nextIndex = (currentIndex - 1 + currentProducts.length) % currentProducts.length;
+    }
+    setFeaturedProduct(currentProducts[nextIndex]);
+  };
+
+  const handleShare = async () => {
+    const shareData = {
+        title: stream?.title || 'AmazeBid Live Stream',
+        text: `Đang xem Live Stream hấp dẫn trên AmazeBid: ${stream?.title}`,
+        url: window.location.href
+    };
+
+    if (navigator.share) {
+        try {
+            await navigator.share(shareData);
+        } catch (err) {
+            console.log('Error sharing:', err);
+        }
+    } else {
+        // Fallback: Copy to clipboard
+        try {
+            await navigator.clipboard.writeText(window.location.href);
+            setShowShareToast(true);
+            setTimeout(() => setShowShareToast(false), 2000);
+        } catch (err) {
+            console.error('Failed to copy: ', err);
+        }
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[300] bg-black text-white flex flex-col md:flex-row h-screen w-screen overflow-hidden">
         
@@ -221,15 +260,33 @@ const LiveStreamViewer: React.FC<LiveStreamViewerProps> = ({ stream, products, o
             </div>
         </div>
 
-        {/* Host Info (Top Right) */}
-        <div className="absolute top-4 right-4 flex items-center gap-2 bg-black/40 backdrop-blur p-1 pr-3 rounded-full z-10">
-            <img 
-                src={stream?.hostAvatar || "https://ui-avatars.com/api/?name=You&background=random"} 
-                className="w-8 h-8 rounded-full border border-white" 
-            />
-            <span className="font-bold text-sm">{stream?.hostName || "Bạn (Host)"}</span>
-            {!isHost && <button className="bg-red-600 text-xs px-2 py-1 rounded font-bold">Follow</button>}
+        {/* Host Info & Share (Top Right) */}
+        <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
+            <button 
+                onClick={handleShare}
+                className="bg-black/40 backdrop-blur p-2 rounded-full hover:bg-black/60 transition-colors text-white"
+                title="Chia sẻ Live Stream"
+            >
+                <Share2 size={20} />
+            </button>
+
+            <div className="flex items-center gap-2 bg-black/40 backdrop-blur p-1 pr-3 rounded-full">
+                <img 
+                    src={stream?.hostAvatar || "https://ui-avatars.com/api/?name=You&background=random"} 
+                    className="w-8 h-8 rounded-full border border-white" 
+                />
+                <span className="font-bold text-sm">{stream?.hostName || "Bạn (Host)"}</span>
+                {!isHost && <button className="bg-red-600 text-xs px-2 py-1 rounded font-bold hover:bg-red-700">Follow</button>}
+            </div>
         </div>
+        
+        {/* Share Toast Notification */}
+        {showShareToast && (
+            <div className="absolute top-20 left-1/2 -translate-x-1/2 z-50 bg-[#131921] text-white px-4 py-2 rounded-full shadow-xl flex items-center gap-2 animate-in fade-in zoom-in font-bold text-sm border border-[#febd69]">
+                <LinkIcon size={16} className="text-[#febd69]"/> Đã sao chép liên kết chia sẻ!
+            </div>
+        )}
+
       </div>
 
       {/* Right Sidebar */}
@@ -237,29 +294,57 @@ const LiveStreamViewer: React.FC<LiveStreamViewerProps> = ({ stream, products, o
         
         {/* Host Controls Toolbar */}
         {isHost && (
-            <div className="p-2 bg-gray-100 border-b border-gray-200 flex justify-between items-center shrink-0">
-                <div className="flex gap-2">
-                    <button onClick={() => setMicEnabled(!micEnabled)} className={`p-2 rounded hover:bg-white ${!micEnabled ? 'text-red-600 bg-red-50' : ''}`} title="Mic">
-                        {micEnabled ? <Mic size={18}/> : <MicOff size={18}/>}
-                    </button>
-                    <button 
-                        onClick={() => {
-                            // If we already have an error, clicking this might try to reconnect
-                            if (cameraError) {
-                                setCameraEnabled(true);
-                                setCameraError(false); // Retry
-                            } else {
-                                setCameraEnabled(!cameraEnabled);
-                            }
-                        }} 
-                        className={`p-2 rounded hover:bg-white ${!cameraEnabled || cameraError ? 'text-red-600 bg-red-50' : ''}`} 
-                        title="Camera"
-                    >
-                        {cameraEnabled && !cameraError ? <Camera size={18}/> : <CameraOff size={18}/>}
-                    </button>
+            <div className="p-2 bg-gray-100 border-b border-gray-200 flex flex-col gap-2 shrink-0">
+                <div className="flex justify-between items-center">
+                    <div className="flex gap-2">
+                        <button onClick={() => setMicEnabled(!micEnabled)} className={`p-2 rounded hover:bg-white ${!micEnabled ? 'text-red-600 bg-red-50' : ''}`} title="Mic">
+                            {micEnabled ? <Mic size={18}/> : <MicOff size={18}/>}
+                        </button>
+                        <button 
+                            onClick={() => {
+                                if (cameraError) {
+                                    setCameraEnabled(true);
+                                    setCameraError(false); 
+                                } else {
+                                    setCameraEnabled(!cameraEnabled);
+                                }
+                            }} 
+                            className={`p-2 rounded hover:bg-white ${!cameraEnabled || cameraError ? 'text-red-600 bg-red-50' : ''}`} 
+                            title="Camera"
+                        >
+                            {cameraEnabled && !cameraError ? <Camera size={18}/> : <CameraOff size={18}/>}
+                        </button>
+                    </div>
+                    <div className="text-xs font-bold text-gray-500 uppercase">Host Control</div>
                 </div>
-                <div className="text-xs font-bold text-gray-500 uppercase">
-                    Bảng điều khiển Host
+
+                {/* Playlist Manager (Host Only) */}
+                <div className="bg-white rounded-lg p-2 border border-gray-200 shadow-sm">
+                    <div className="flex justify-between items-center mb-2">
+                        <span className="text-[10px] font-bold text-gray-500 flex items-center gap-1">
+                            <Layers size={12}/> DANH SÁCH SP ({currentProducts.length})
+                        </span>
+                        <div className="flex gap-1">
+                            <button onClick={() => handleSwitchProduct('prev')} className="p-1 hover:bg-gray-100 rounded"><ChevronLeft size={14}/></button>
+                            <button onClick={() => handleSwitchProduct('next')} className="p-1 hover:bg-gray-100 rounded"><ChevronRight size={14}/></button>
+                        </div>
+                    </div>
+                    <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                        {currentProducts.map(p => (
+                            <div 
+                                key={p.id}
+                                onClick={() => setFeaturedProduct(p)}
+                                className={`relative shrink-0 cursor-pointer rounded-lg overflow-hidden border-2 w-12 h-12 transition-all ${featuredProduct?.id === p.id ? 'border-red-600 ring-1 ring-red-600' : 'border-gray-200 opacity-70 hover:opacity-100'}`}
+                            >
+                                <img src={p.image} className="w-full h-full object-cover" />
+                                {featuredProduct?.id === p.id && (
+                                    <div className="absolute inset-0 bg-red-600/20 flex items-center justify-center">
+                                        <div className="w-2 h-2 bg-red-600 rounded-full animate-pulse shadow-sm shadow-white"/>
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
         )}

@@ -37,7 +37,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           balance: 0,
           paymentMethods: [
             { id: 'pm_1', type: 'BANK', providerName: 'Vietcombank', accountNumber: '9988776655', holderName: 'NGUYEN VAN A', isDefault: true }
-          ]
+          ],
+          socialAccounts: [
+            { provider: 'google', connected: true, username: 'nguyenvana@gmail.com' },
+            { provider: 'facebook', connected: false }
+          ],
+          referralCode: 'AMAZE-A-123',
+          friendCount: 12
         };
         setUser(mockUser);
         localStorage.setItem('amaze_user', JSON.stringify(mockUser));
@@ -56,7 +62,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
           joinDate: new Date().toISOString(),
           balance: 0,
-          paymentMethods: []
+          paymentMethods: [],
+          socialAccounts: [
+             { provider: 'google', connected: false },
+             { provider: 'facebook', connected: false }
+          ],
+          referralCode: `AMAZE-${Math.floor(Math.random() * 10000)}`,
+          friendCount: 0
         };
         setUser(newUser);
         localStorage.setItem('amaze_user', JSON.stringify(newUser));
