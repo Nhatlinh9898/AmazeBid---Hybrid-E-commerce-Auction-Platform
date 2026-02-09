@@ -6,20 +6,30 @@ export enum ItemType {
 
 export enum OrderStatus {
   AVAILABLE = 'AVAILABLE',
-  PENDING_SHIPMENT = 'PENDING_SHIPMENT', // Buyer paid, money held by system
-  SHIPPED = 'SHIPPED',                   // Seller sent item
-  DELIVERED = 'DELIVERED',               // Buyer received, pending confirmation
-  COMPLETED = 'COMPLETED',               // Funds released to seller
-  RETURNED = 'RETURNED'                  // Buyer returned, buyer pays shipping
+  PENDING_SHIPMENT = 'PENDING_SHIPMENT',
+  SHIPPED = 'SHIPPED',
+  DELIVERED = 'DELIVERED',
+  COMPLETED = 'COMPLETED',
+  RETURNED = 'RETURNED'
+}
+
+export interface Bid {
+  id: string;
+  userId: string;
+  userName: string;
+  amount: number;
+  timestamp: string;
 }
 
 export interface Product {
   id: string;
   title: string;
   description: string;
-  price: number;
+  price: number; // For Auction: Starting Price
   currentBid?: number;
   bidCount?: number;
+  bidHistory?: Bid[]; // New: List of bids
+  stepPrice?: number; // New: Minimum increment
   image: string;
   category: string;
   type: ItemType;
@@ -28,7 +38,7 @@ export interface Product {
   reviewCount: number;
   status: OrderStatus;
   sellerId: string;
-  payoutMethod?: string; // e.g., "Bank **** 1234"
+  payoutMethod?: string;
 }
 
 export interface LiveStream {

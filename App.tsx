@@ -6,8 +6,9 @@ import GeminiAssistant from './components/GeminiAssistant';
 import SellModal from './components/SellModal';
 import OrderDashboard from './components/OrderDashboard';
 import LiveStreamViewer from './components/LiveStreamViewer';
+import BidModal from './components/BidModal'; // New Import
 import { MOCK_PRODUCTS, MOCK_STREAMS } from './data';
-import { Product, CartItem, ItemType, OrderStatus, LiveStream } from './types';
+import { Product, CartItem, ItemType, OrderStatus, LiveStream, Bid } from './types';
 import { ShoppingBag, ChevronRight, X, Minus, Plus, Trash2, Sparkles, Filter, PackageSearch, ShieldCheck, PlayCircle, User } from 'lucide-react';
 
 const App: React.FC = () => {
@@ -17,10 +18,13 @@ const App: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState('Tất cả');
   const [filterType, setFilterType] = useState<'ALL' | ItemType>('ALL');
   const [cart, setCart] = useState<CartItem[]>([]);
+  
+  // Modals
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isSellModalOpen, setIsSellModalOpen] = useState(false);
   const [isOrderDashboardOpen, setIsOrderDashboardOpen] = useState(false);
-  
+  const [bidModalProduct, setBidModalProduct] = useState<Product | null>(null); // State for Bid Modal
+
   // Live Stream States
   const [activeStream, setActiveStream] = useState<LiveStream | null>(null);
   const [isLiveStudioOpen, setIsLiveStudioOpen] = useState(false);
@@ -32,15 +36,18 @@ const App: React.FC = () => {
 
   const filteredProducts = useMemo(() => {
     return products.filter(p => {
-      // Only show available items in the main feed
       if (p.status !== OrderStatus.AVAILABLE) return false;
-
       const matchesSearch = p.title.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesCategory = selectedCategory === 'Tất cả' || p.category === selectedCategory || (selectedCategory === 'Điện tử' && p.category === 'Electronics');
       const matchesType = filterType === 'ALL' || p.type === filterType;
       return matchesSearch && matchesCategory && matchesType;
     });
   }, [searchTerm, products, selectedCategory, filterType]);
+
+  const showNotification = (msg: string) => {
+    setNotification(msg);
+    setTimeout(() => setNotification(null), 3000);
+  };
 
   const handleAddToCart = (product: Product) => {
     setCart(prev => {
@@ -53,8 +60,60 @@ const App: React.FC = () => {
     showNotification(`Đã thêm ${product.title} vào giỏ hàng`);
   };
 
-  const handlePlaceBid = (product: Product) => {
-    showNotification(`Bạn đã đặt giá thầu cho ${product.title}!`);
+  // Open the standard auction modal
+  const handleOpenBidModal = (product: Product) => {
+    setBidModalProduct(product);
+  };
+
+  // Logic to process a bid (from Modal or Live Stream)
+  const handleSubmitBid = (product: Product, amount: number) => {
+    setProducts(prev => prev.map(p => {
+        if (p.id === product.id) {
+            const newBid: Bid = {
+                id: `bid_${Date.now()}`,
+                userId: 'currentUser',
+                userName: 'Bạn',
+                amount: amount,
+                timestamp: new Date().toISOString()
+            };
+            return {
+                ...p,
+                currentBid: amount,
+                bidCount: (p.bidCount || 0) + 1,
+                bidHistory: p.bidHistory ? [...p.bidHistory, newBid] : [newBid]
+            };
+        }
+        return p;
+    }));
+    
+    // Simulate a counter-bid from a "Bot" for excitement (if in Live or just for fun)
+    // Only simulate 50% of the time to not be annoying
+    if (Math.random() > 0.5) {
+        setTimeout(() => {
+             setProducts(prev => prev.map(p => {
+                if (p.id === product.id) {
+                    const botAmount = amount + (p.stepPrice || 10);
+                    const botBid: Bid = {
+                        id: `bid_bot_${Date.now()}`,
+                        userId: 'bot_sniper',
+                        userName: 'SniperPro99',
+                        amount: botAmount,
+                        timestamp: new Date().toISOString()
+                    };
+                    return {
+                        ...p,
+                        currentBid: botAmount,
+                        bidCount: (p.bidCount || 0) + 1,
+                        bidHistory: p.bidHistory ? [...p.bidHistory, botBid] : [botBid]
+                    };
+                }
+                return p;
+            }));
+            if (!activeStream) showNotification(`Bạn đã bị SniperPro99 vượt giá sản phẩm ${product.title}!`);
+        }, 3000);
+    }
+
+    showNotification(`Đã đặt giá thầu $${amount} thành công!`);
   };
 
   const handleAddProduct = (newProduct: Product) => {
@@ -63,19 +122,15 @@ const App: React.FC = () => {
   };
 
   const handleCheckout = () => {
-    // Simulate buying everything in cart
     const boughtIds = cart.map(c => c.id);
     setProducts(prev => prev.map(p => {
-      if (boughtIds.includes(p.id)) {
-        return { ...p, status: OrderStatus.PENDING_SHIPMENT };
-      }
+      if (boughtIds.includes(p.id)) return { ...p, status: OrderStatus.PENDING_SHIPMENT };
       return p;
     }));
-    
     setCart([]);
     setIsCartOpen(false);
     showNotification("Thanh toán thành công! Tiền đang được hệ thống tạm giữ.");
-    setTimeout(() => setIsOrderDashboardOpen(true), 1500); // Open dashboard to show status
+    setTimeout(() => setIsOrderDashboardOpen(true), 1500); 
   };
 
   const handleOrderStatusUpdate = (productId: string, newStatus: OrderStatus) => {
@@ -84,13 +139,8 @@ const App: React.FC = () => {
         return p;
     }));
     if (newStatus === OrderStatus.SHIPPED) showNotification("Đã cập nhật trạng thái: Đã gửi hàng");
-    if (newStatus === OrderStatus.COMPLETED) showNotification("Giao dịch hoàn tất! Tiền đã chuyển cho người bán.");
-    if (newStatus === OrderStatus.RETURNED) showNotification("Đã yêu cầu trả hàng. Phí vận chuyển tính cho người mua.");
-  };
-
-  const showNotification = (msg: string) => {
-    setNotification(msg);
-    setTimeout(() => setNotification(null), 3000);
+    if (newStatus === OrderStatus.COMPLETED) showNotification("Giao dịch hoàn tất!");
+    if (newStatus === OrderStatus.RETURNED) showNotification("Đã yêu cầu trả hàng.");
   };
 
   const updateQuantity = (id: string, delta: number) => {
@@ -161,7 +211,7 @@ const App: React.FC = () => {
             </div>
         )}
 
-        {/* Banner Section (Only show if not viewing live list excessively) */}
+        {/* Banner Section */}
         {!showLiveList && (
             <div className="relative h-[250px] md:h-[350px] mb-8 overflow-hidden rounded-xl shadow-lg group">
             <img 
@@ -206,7 +256,7 @@ const App: React.FC = () => {
           ))}
         </div>
 
-        {/* Filter Controls & Results Header */}
+        {/* Filter Controls */}
         <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
           <div className="flex items-center gap-4 bg-white p-1 rounded-lg shadow-sm border border-gray-100">
             <button 
@@ -241,7 +291,7 @@ const App: React.FC = () => {
                 key={product.id} 
                 product={product} 
                 onAddToCart={handleAddToCart}
-                onPlaceBid={handlePlaceBid}
+                onPlaceBid={handleOpenBidModal} 
               />
             ))}
           </div>
@@ -364,7 +414,16 @@ const App: React.FC = () => {
         />
       )}
 
-      {/* Order Dashboard (My Sales / My Purchases) */}
+      {/* Standard Bid Modal */}
+      {bidModalProduct && (
+        <BidModal 
+          product={bidModalProduct}
+          onClose={() => setBidModalProduct(null)}
+          onSubmitBid={(amount) => handleSubmitBid(bidModalProduct, amount)}
+        />
+      )}
+
+      {/* Order Dashboard */}
       <OrderDashboard 
         isOpen={isOrderDashboardOpen}
         onClose={() => setIsOrderDashboardOpen(false)}
@@ -373,16 +432,16 @@ const App: React.FC = () => {
         onUpdateStatus={handleOrderStatusUpdate}
       />
 
-      {/* Live Stream Viewer & Studio */}
+      {/* Live Stream Viewer */}
       {(activeStream || isLiveStudioOpen) && (
           <LiveStreamViewer 
-            stream={activeStream || undefined} // If activeStream is null but isLiveStudioOpen is true, pass undefined to trigger Studio mode
+            stream={activeStream || undefined} 
             products={products}
             onClose={() => {
                 setActiveStream(null);
                 setIsLiveStudioOpen(false);
             }}
-            onPlaceBid={handlePlaceBid}
+            onPlaceBid={handleSubmitBid}
             onAddToCart={handleAddToCart}
           />
       )}

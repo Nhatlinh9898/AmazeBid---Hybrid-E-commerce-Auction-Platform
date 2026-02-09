@@ -107,7 +107,14 @@ export const MOCK_PRODUCTS: Product[] = [
     description: 'Extremely rare collectible camera in pristine condition. A true masterpiece for collectors.',
     price: 1500,
     currentBid: 1850.00,
-    bidCount: 24,
+    bidCount: 4,
+    stepPrice: 50,
+    bidHistory: [
+      { id: 'b1', userId: 'u1', userName: 'CameraLover', amount: 1600, timestamp: '2023-10-25T10:00:00Z' },
+      { id: 'b2', userId: 'u2', userName: 'LeicaFan', amount: 1650, timestamp: '2023-10-25T10:30:00Z' },
+      { id: 'b3', userId: 'u1', userName: 'CameraLover', amount: 1750, timestamp: '2023-10-25T11:15:00Z' },
+      { id: 'b4', userId: 'u3', userName: 'RichCollector', amount: 1850, timestamp: '2023-10-25T12:00:00Z' },
+    ],
     image: 'https://picsum.photos/seed/leica/400/400',
     category: 'Collectibles',
     type: ItemType.AUCTION,
@@ -136,7 +143,12 @@ export const MOCK_PRODUCTS: Product[] = [
     description: 'Shadowless 1st Edition PSA 10. The holy grail of Pokémon cards.',
     price: 5000,
     currentBid: 12400.00,
-    bidCount: 86,
+    bidCount: 12,
+    stepPrice: 100,
+    bidHistory: [
+        { id: 'b1', userId: 'poke1', userName: 'AshKetchum', amount: 6000, timestamp: '2023-10-24T09:00:00Z' },
+        { id: 'b2', userId: 'poke2', userName: 'TeamRocket', amount: 12400, timestamp: '2023-10-25T12:00:00Z' }
+    ],
     image: 'https://picsum.photos/seed/pokemon/400/400',
     category: 'Collectibles',
     type: ItemType.AUCTION,
@@ -165,7 +177,12 @@ export const MOCK_PRODUCTS: Product[] = [
     description: 'Original 1969 UK Pressing. Sleeve in Excellent condition.',
     price: 200,
     currentBid: 455.00,
-    bidCount: 12,
+    bidCount: 5,
+    stepPrice: 10,
+    bidHistory: [
+        { id: 'b1', userId: 'beatle1', userName: 'JohnFan', amount: 300, timestamp: '2023-10-24T10:00:00Z' },
+        { id: 'b2', userId: 'beatle2', userName: 'PaulFan', amount: 455, timestamp: '2023-10-25T08:00:00Z' }
+    ],
     image: 'https://picsum.photos/seed/beatles/400/400',
     category: 'Music',
     type: ItemType.AUCTION,
