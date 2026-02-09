@@ -15,13 +15,15 @@ import ContentStudioModal from './components/ContentStudioModal'; // New Import
 import { AuthProvider, useAuth } from './context/AuthContext'; 
 
 import { MOCK_PRODUCTS, MOCK_STREAMS } from './data';
-import { Product, CartItem, ItemType, OrderStatus, LiveStream, Bid } from './types';
+import { Product, CartItem, ItemType, OrderStatus, LiveStream, Bid, ContentPost } from './types';
 import { ShoppingBag, ChevronRight, X, Minus, Plus, Trash2, Sparkles, Filter, PackageSearch, ShieldCheck, PlayCircle, User } from 'lucide-react';
 
 const InnerApp: React.FC = () => {
   const { user } = useAuth();
   const [products, setProducts] = useState<Product[]>(MOCK_PRODUCTS);
   const [streams, setStreams] = useState<LiveStream[]>(MOCK_STREAMS);
+  const [contentPosts, setContentPosts] = useState<ContentPost[]>([]); // State for Content Posts
+
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Tất cả');
   const [filterType, setFilterType] = useState<'ALL' | ItemType>('ALL');
@@ -141,6 +143,11 @@ const InnerApp: React.FC = () => {
     showNotification(`Niêm yết "${newProduct.title}" thành công!`);
   };
 
+  const handleAddContentPost = (post: ContentPost) => {
+      setContentPosts(prev => [post, ...prev]);
+      showNotification(`Đã xuất bản bài viết "${post.title}" thành công!`);
+  };
+
   const handleCreateStream = (streamData: Partial<LiveStream>) => {
     if (!user) return;
     const newStream = streamData as LiveStream;
@@ -195,6 +202,12 @@ const InnerApp: React.FC = () => {
   };
 
   const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+  // Filter products belonging to current user
+  const myProducts = useMemo(() => {
+      if (!user) return [];
+      return products.filter(p => p.sellerId === user.id);
+  }, [products, user]);
 
   return (
     <div className="min-h-screen bg-[#f3f4f6] pb-20">
@@ -513,7 +526,9 @@ const InnerApp: React.FC = () => {
       {/* User Profile */}
       <UserProfile 
         isOpen={isProfileOpen} 
-        onClose={() => setIsProfileOpen(false)} 
+        onClose={() => setIsProfileOpen(false)}
+        myProducts={myProducts}
+        myPosts={contentPosts}
       />
 
       {/* Customer Service Modal */}
@@ -526,6 +541,7 @@ const InnerApp: React.FC = () => {
       <ContentStudioModal
         isOpen={isContentStudioOpen}
         onClose={() => setIsContentStudioOpen(false)}
+        onSavePost={handleAddContentPost}
       />
 
       {/* Notification Toast */}

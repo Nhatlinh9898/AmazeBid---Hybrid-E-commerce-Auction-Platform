@@ -1,17 +1,19 @@
 
 import React, { useState, useEffect } from 'react';
-import { User, CreditCard, ShieldCheck, MapPin, Eye, EyeOff, Edit2, Plus, LogOut, Lock, X, Share2, Copy, Check, Facebook, Instagram, Chrome, Users, Link, Save, Trash2, AlertTriangle, Phone } from 'lucide-react';
+import { User, CreditCard, ShieldCheck, MapPin, Eye, EyeOff, Edit2, Plus, LogOut, Lock, X, Share2, Copy, Check, Facebook, Instagram, Chrome, Users, Link, Save, Trash2, AlertTriangle, Phone, FileText, ShoppingBag, Gavel, Calendar, Video } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { PaymentMethod, SocialAccount } from '../types';
+import { PaymentMethod, SocialAccount, Product, ContentPost, ItemType } from '../types';
 
 interface UserProfileProps {
   isOpen: boolean;
   onClose: () => void;
+  myProducts?: Product[];
+  myPosts?: ContentPost[];
 }
 
-const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => {
+const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose, myProducts = [], myPosts = [] }) => {
   const { user, logout, updateProfile } = useAuth();
-  const [activeTab, setActiveTab] = useState<'INFO' | 'PAYMENT' | 'SECURITY' | 'SOCIAL'>('INFO');
+  const [activeTab, setActiveTab] = useState<'INFO' | 'PAYMENT' | 'SECURITY' | 'SOCIAL' | 'POSTS'>('INFO');
   const [showSensitive, setShowSensitive] = useState<Record<string, boolean>>({});
   const [copied, setCopied] = useState(false);
   const [friendCodeInput, setFriendCodeInput] = useState('');
@@ -160,6 +162,12 @@ const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => {
                     <User size={16} /> Thông tin cá nhân
                 </button>
                 <button 
+                    onClick={() => setActiveTab('POSTS')}
+                    className={`w-full text-left px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-3 ${activeTab === 'POSTS' ? 'bg-[#131921] text-white' : 'hover:bg-gray-200 text-gray-600'}`}
+                >
+                    <FileText size={16} /> Bài đăng & Sản phẩm
+                </button>
+                <button 
                     onClick={() => setActiveTab('PAYMENT')}
                     className={`w-full text-left px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-3 ${activeTab === 'PAYMENT' ? 'bg-[#131921] text-white' : 'hover:bg-gray-200 text-gray-600'}`}
                 >
@@ -281,6 +289,79 @@ const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => {
                                  </div>
                              )}
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* TAB: POSTS & PRODUCTS */}
+            {activeTab === 'POSTS' && (
+                <div className="space-y-8 animate-in slide-in-from-right-4">
+                    <h2 className="text-2xl font-bold mb-4">Quản lý Bài đăng & Sản phẩm</h2>
+                    
+                    {/* Products Section */}
+                    <div>
+                        <h3 className="font-bold text-lg mb-4 flex items-center gap-2 border-b pb-2">
+                            <ShoppingBag className="text-[#febd69]"/> Sản phẩm đang bán ({myProducts.length})
+                        </h3>
+                        {myProducts.length === 0 ? (
+                            <p className="text-gray-400 italic text-sm">Bạn chưa đăng bán sản phẩm nào.</p>
+                        ) : (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                {myProducts.map(prod => (
+                                    <div key={prod.id} className="border border-gray-200 rounded-xl p-3 flex gap-3 hover:shadow-md transition-shadow bg-white">
+                                        <img src={prod.image} className="w-16 h-16 rounded object-cover bg-gray-100"/>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-bold text-sm truncate">{prod.title}</p>
+                                            <div className="flex items-center gap-2 text-xs mt-1">
+                                                <span className="font-bold text-[#b12704]">${prod.price}</span>
+                                                {prod.type === ItemType.AUCTION ? (
+                                                    <span className="bg-red-50 text-red-600 px-1.5 py-0.5 rounded flex items-center gap-0.5"><Gavel size={10}/> Đấu giá</span>
+                                                ) : (
+                                                    <span className="bg-green-50 text-green-600 px-1.5 py-0.5 rounded flex items-center gap-0.5"><ShoppingBag size={10}/> Mua ngay</span>
+                                                )}
+                                            </div>
+                                            <p className="text-[10px] text-gray-400 mt-1">{prod.category}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Content Posts Section */}
+                    <div>
+                        <h3 className="font-bold text-lg mb-4 flex items-center gap-2 border-b pb-2">
+                            <FileText className="text-blue-500"/> Bài viết nội dung (Content Studio) ({myPosts.length})
+                        </h3>
+                        {myPosts.length === 0 ? (
+                            <p className="text-gray-400 italic text-sm">Bạn chưa tạo bài viết nào từ Content Studio.</p>
+                        ) : (
+                            <div className="space-y-4">
+                                {myPosts.map(post => (
+                                    <div key={post.id} className="border border-gray-200 rounded-xl p-4 bg-white hover:border-blue-300 transition-colors">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <h4 className="font-bold text-gray-900">{post.title}</h4>
+                                            <span className="text-[10px] font-bold bg-green-100 text-green-700 px-2 py-1 rounded-full uppercase">{post.status}</span>
+                                        </div>
+                                        
+                                        <div className="flex gap-4 mb-3">
+                                            {post.generatedImages && post.generatedImages.length > 0 && (
+                                                <img src={post.generatedImages[0]} className="w-20 h-20 rounded object-cover border border-gray-100"/>
+                                            )}
+                                            <p className="text-xs text-gray-500 line-clamp-3 flex-1">{post.content}</p>
+                                        </div>
+                                        
+                                        <div className="flex items-center justify-between text-xs text-gray-400 border-t pt-2">
+                                            <div className="flex gap-2">
+                                                <span className="flex items-center gap-1"><Calendar size={12}/> {new Date(post.createdAt).toLocaleDateString()}</span>
+                                                <span className="flex items-center gap-1"><Share2 size={12}/> {post.platform}</span>
+                                            </div>
+                                            {post.generatedVideo && <span className="text-red-500 flex items-center gap-1 font-bold"><Video size={12}/> Có Video</span>}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

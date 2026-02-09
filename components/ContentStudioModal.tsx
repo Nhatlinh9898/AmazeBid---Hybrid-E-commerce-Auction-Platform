@@ -1,13 +1,16 @@
+
 import React, { useState, useRef } from 'react';
 import { X, PenTool, Image as ImageIcon, Video, Share2, Sparkles, LayoutTemplate, Save, Download, ChevronRight, Wand2, Globe, CheckCircle2, Copy } from 'lucide-react';
 import { generateSEOContent, generateProductImage, generateProductVideo } from '../services/geminiService';
+import { ContentPost } from '../types';
 
 interface ContentStudioModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSavePost?: (post: ContentPost) => void;
 }
 
-const ContentStudioModal: React.FC<ContentStudioModalProps> = ({ isOpen, onClose }) => {
+const ContentStudioModal: React.FC<ContentStudioModalProps> = ({ isOpen, onClose, onSavePost }) => {
   // Steps: 1=Info, 2=Text, 3=Visuals, 4=Review
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
@@ -77,7 +80,20 @@ const ContentStudioModal: React.FC<ContentStudioModalProps> = ({ isOpen, onClose
   };
 
   const handlePublish = () => {
-      alert("Đã lưu bài viết vào trang cá nhân và đăng lên Mạng xã hội thành công!");
+      if (onSavePost) {
+          const newPost: ContentPost = {
+              id: `post_${Date.now()}`,
+              title: productName,
+              content: generatedContent,
+              keywords: keywords.split(',').map(k => k.trim()),
+              generatedImages: generatedImages,
+              generatedVideo: generatedVideo || undefined,
+              status: 'PUBLISHED',
+              platform: 'BLOG',
+              createdAt: new Date().toISOString()
+          };
+          onSavePost(newPost);
+      }
       onClose();
   };
 

@@ -1,10 +1,11 @@
+
 import { GoogleGenAI } from "@google/genai";
 import { Product } from "../types";
 
 declare global {
   interface AIStudio {
     hasSelectedApiKey: () => Promise<boolean>;
-    openSelectKey: () => Promise<boolean>;
+    openSelectKey: () => Promise<void>;
   }
   
   interface Window {
