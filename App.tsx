@@ -8,9 +8,10 @@ import OrderDashboard from './components/OrderDashboard';
 import LiveStreamViewer from './components/LiveStreamViewer';
 import CreateStreamModal from './components/CreateStreamModal'; 
 import BidModal from './components/BidModal';
-import AuthModal from './components/AuthModal'; // New
-import UserProfile from './components/UserProfile'; // New
-import { AuthProvider, useAuth } from './context/AuthContext'; // New
+import AuthModal from './components/AuthModal'; 
+import UserProfile from './components/UserProfile'; 
+import CustomerServiceModal from './components/CustomerServiceModal'; // New Import
+import { AuthProvider, useAuth } from './context/AuthContext'; 
 
 import { MOCK_PRODUCTS, MOCK_STREAMS } from './data';
 import { Product, CartItem, ItemType, OrderStatus, LiveStream, Bid } from './types';
@@ -33,10 +34,11 @@ const InnerApp: React.FC = () => {
   const [isCreateStreamModalOpen, setIsCreateStreamModalOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isCustomerServiceOpen, setIsCustomerServiceOpen] = useState(false); // New State
 
   // Live Stream States
   const [activeStream, setActiveStream] = useState<LiveStream | null>(null);
-  const [isHostMode, setIsHostMode] = useState(false); // Track if user is hosting
+  const [isHostMode, setIsHostMode] = useState(false); 
   const [showLiveList, setShowLiveList] = useState(false);
 
   const [notification, setNotification] = useState<string | null>(null);
@@ -210,6 +212,7 @@ const InnerApp: React.FC = () => {
         }}
         onOpenAuth={() => setIsAuthModalOpen(true)}
         onOpenProfile={() => setIsProfileOpen(true)}
+        onOpenCustomerService={() => setIsCustomerServiceOpen(true)}
       />
 
       <main className="max-w-[1500px] mx-auto px-4 py-6">
@@ -508,6 +511,12 @@ const InnerApp: React.FC = () => {
       <UserProfile 
         isOpen={isProfileOpen} 
         onClose={() => setIsProfileOpen(false)} 
+      />
+
+      {/* Customer Service Modal */}
+      <CustomerServiceModal 
+        isOpen={isCustomerServiceOpen}
+        onClose={() => setIsCustomerServiceOpen(false)}
       />
 
       {/* Notification Toast */}

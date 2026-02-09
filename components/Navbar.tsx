@@ -13,11 +13,12 @@ interface NavbarProps {
   onViewLiveStreams: () => void;
   onOpenAuth: () => void;
   onOpenProfile: () => void;
+  onOpenCustomerService: () => void; // New prop
 }
 
 const Navbar: React.FC<NavbarProps> = ({ 
   cartCount, onSearch, openCart, openSellModal, openOrders, 
-  onOpenLiveStudio, onViewLiveStreams, onOpenAuth, onOpenProfile 
+  onOpenLiveStudio, onViewLiveStreams, onOpenAuth, onOpenProfile, onOpenCustomerService 
 }) => {
   const { user } = useAuth();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -145,7 +146,12 @@ const Navbar: React.FC<NavbarProps> = ({
             Live Auctions
         </span>
         <span className="hover:border-white border border-transparent p-1 rounded cursor-pointer">Siêu Ưu Đãi</span>
-        <span className="hover:border-white border border-transparent p-1 rounded cursor-pointer">Dịch vụ khách hàng</span>
+        <span 
+            onClick={onOpenCustomerService}
+            className="hover:border-white border border-transparent p-1 rounded cursor-pointer"
+        >
+            Dịch vụ khách hàng
+        </span>
         <span className="hover:border-white border border-transparent p-1 rounded cursor-pointer">Bán hàng</span>
       </div>
     </header>
