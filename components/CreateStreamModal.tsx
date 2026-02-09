@@ -1,15 +1,16 @@
 
 import React, { useState } from 'react';
-import { X, Video, ShoppingBag, Gavel, CheckCircle2 } from 'lucide-react';
+import { X, Video, ShoppingBag, Gavel, CheckCircle2, Plus } from 'lucide-react';
 import { Product, LiveStream, ItemType } from '../types';
 
 interface CreateStreamModalProps {
   onClose: () => void;
   onStartStream: (streamData: Partial<LiveStream>) => void;
+  onOpenSellModal: () => void; // New prop to open Sell Modal
   myProducts: Product[];
 }
 
-const CreateStreamModal: React.FC<CreateStreamModalProps> = ({ onClose, onStartStream, myProducts }) => {
+const CreateStreamModal: React.FC<CreateStreamModalProps> = ({ onClose, onStartStream, onOpenSellModal, myProducts }) => {
   const [title, setTitle] = useState('');
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
   const [error, setError] = useState('');
@@ -76,15 +77,29 @@ const CreateStreamModal: React.FC<CreateStreamModalProps> = ({ onClose, onStartS
           <div>
             <div className="flex justify-between items-center mb-2">
                 <label className="block text-xs font-bold text-gray-500 uppercase">Chọn sản phẩm từ kho của bạn</label>
-                <span className="text-xs font-bold text-[#febd69] bg-[#131921] px-2 py-1 rounded-full">
-                    Đã chọn: {selectedProductIds.length}
-                </span>
+                <div className="flex gap-2">
+                    <button 
+                        onClick={onOpenSellModal}
+                        className="text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded-full flex items-center gap-1 transition-colors"
+                    >
+                        <Plus size={12} /> Thêm SP mới
+                    </button>
+                    <span className="text-xs font-bold text-[#febd69] bg-[#131921] px-2 py-1 rounded-full">
+                        Đã chọn: {selectedProductIds.length}
+                    </span>
+                </div>
             </div>
             
             {myProducts.length === 0 ? (
-                <div className="text-center p-8 bg-gray-50 rounded-xl border border-dashed border-gray-300">
+                <div className="text-center p-8 bg-gray-50 rounded-xl border border-dashed border-gray-300 flex flex-col items-center justify-center">
                     <ShoppingBag size={32} className="mx-auto text-gray-300 mb-2"/>
-                    <p className="text-gray-500 text-sm">Kho hàng trống. Hãy đăng bán sản phẩm trước.</p>
+                    <p className="text-gray-500 text-sm mb-3">Kho hàng trống. Bạn chưa có sản phẩm nào.</p>
+                    <button 
+                        onClick={onOpenSellModal}
+                        className="bg-[#febd69] text-black px-4 py-2 rounded-lg font-bold text-xs hover:bg-[#f3a847] transition-all"
+                    >
+                        + Đăng bán ngay
+                    </button>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[300px] overflow-y-auto pr-1">

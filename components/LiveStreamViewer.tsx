@@ -83,21 +83,31 @@ const LiveStreamViewer: React.FC<LiveStreamViewerProps> = ({ stream, products, o
     else if (isHost) {
         const startCamera = async () => {
             setCameraError(false);
+            
+            // Check if browser supports media devices
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                console.warn("Media devices API not supported in this browser.");
+                setCameraError(true);
+                return;
+            }
+
             try {
+                // Attempt to request video and audio
                 const streamData = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
                 if (videoRef.current) {
                     videoRef.current.srcObject = streamData;
                 }
             } catch (err) {
-                console.error("Camera access denied or error:", err);
-                setCameraError(true); // Fallback to avatar UI
+                // Gracefully handle error (User denied, or No Device found)
+                console.warn("Camera/Mic access failed or not found. Falling back to Avatar mode.", err);
+                setCameraError(true); // Triggers the Avatar/Error UI
             }
         };
 
         if (isStreaming && cameraEnabled) {
              startCamera();
         } else {
-            // Stop tracks if disabled
+            // Stop tracks if disabled via toggle
             if (videoRef.current && videoRef.current.srcObject) {
                 const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
                 tracks.forEach(track => track.stop());
@@ -106,6 +116,7 @@ const LiveStreamViewer: React.FC<LiveStreamViewerProps> = ({ stream, products, o
         }
         
         return () => {
+             // Cleanup on unmount
              if (videoRef.current && videoRef.current.srcObject) {
                 const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
                 tracks.forEach(track => track.stop());
@@ -155,12 +166,16 @@ const LiveStreamViewer: React.FC<LiveStreamViewerProps> = ({ stream, products, o
         {isHost ? (
             // HOST VIEW
             cameraError ? (
-                <div className="flex flex-col items-center justify-center text-gray-400 p-8 text-center animate-in fade-in">
-                    <div className="w-32 h-32 bg-gray-800 rounded-full flex items-center justify-center mb-4 border-2 border-red-600/50">
-                        <VideoOff size={48} />
+                <div className="flex flex-col items-center justify-center text-gray-400 p-8 text-center animate-in fade-in bg-gray-900 w-full h-full">
+                    <div className="w-32 h-32 bg-gray-800 rounded-full flex items-center justify-center mb-4 border-2 border-red-600/50 shadow-lg shadow-red-900/20">
+                        <VideoOff size={48} className="text-gray-500" />
                     </div>
-                    <h3 className="text-xl font-bold text-white mb-2">Camera không khả dụng</h3>
-                    <p className="max-w-xs">Chúng tôi không thể truy cập camera. Bạn đang phát ở chế độ chỉ có âm thanh (Audio-only) hoặc hiển thị Avatar.</p>
+                    <h3 className="text-xl font-bold text-white mb-2">Chế độ Audio / Avatar</h3>
+                    <p className="max-w-xs text-sm opacity-80">Chúng tôi không tìm thấy camera hoặc quyền truy cập bị từ chối. Bạn vẫn có thể livestream bằng âm thanh.</p>
+                    <div className="mt-6 flex items-center gap-2 px-4 py-2 bg-gray-800 rounded-full text-xs font-bold text-green-400">
+                         <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"/> 
+                         Microphone đang hoạt động (Giả lập)
+                    </div>
                 </div>
             ) : (
                 <video 
@@ -219,8 +234,20 @@ const LiveStreamViewer: React.FC<LiveStreamViewerProps> = ({ stream, products, o
                     <button onClick={() => setMicEnabled(!micEnabled)} className={`p-2 rounded hover:bg-white ${!micEnabled ? 'text-red-600 bg-red-50' : ''}`} title="Mic">
                         {micEnabled ? <Mic size={18}/> : <MicOff size={18}/>}
                     </button>
-                    <button onClick={() => setCameraEnabled(!cameraEnabled)} className={`p-2 rounded hover:bg-white ${!cameraEnabled ? 'text-red-600 bg-red-50' : ''}`} title="Camera">
-                        {cameraEnabled ? <Camera size={18}/> : <CameraOff size={18}/>}
+                    <button 
+                        onClick={() => {
+                            // If we already have an error, clicking this might try to reconnect
+                            if (cameraError) {
+                                setCameraEnabled(true);
+                                setCameraError(false); // Retry
+                            } else {
+                                setCameraEnabled(!cameraEnabled);
+                            }
+                        }} 
+                        className={`p-2 rounded hover:bg-white ${!cameraEnabled || cameraError ? 'text-red-600 bg-red-50' : ''}`} 
+                        title="Camera"
+                    >
+                        {cameraEnabled && !cameraError ? <Camera size={18}/> : <CameraOff size={18}/>}
                     </button>
                 </div>
                 <div className="text-xs font-bold text-gray-500 uppercase">

@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { Package, Truck, CheckCircle, AlertTriangle, X, RefreshCw } from 'lucide-react';
-import { Product, OrderStatus } from '../types';
+import { Package, Truck, CheckCircle, AlertTriangle, X, RefreshCw, Box, Gavel, ShoppingBag, Trash2 } from 'lucide-react';
+import { Product, OrderStatus, ItemType } from '../types';
 
 interface OrderDashboardProps {
   isOpen: boolean;
@@ -16,11 +16,10 @@ const OrderDashboard: React.FC<OrderDashboardProps> = ({
 }) => {
   if (!isOpen) return null;
 
-  // Filter products related to the user (bought or sold)
-  // For demo: "currentUser" is the seller for items they listed.
-  // We will simulate that "currentUser" also BOUGHT any item with status != AVAILABLE that they didn't sell.
+  // Filter products
   const mySales = products.filter(p => p.sellerId === currentUserId && p.status !== OrderStatus.AVAILABLE);
   const myPurchases = products.filter(p => p.sellerId !== currentUserId && p.status !== OrderStatus.AVAILABLE);
+  const myInventory = products.filter(p => p.sellerId === currentUserId && p.status === OrderStatus.AVAILABLE);
 
   const getStatusBadge = (status: OrderStatus) => {
     switch (status) {
@@ -42,25 +41,62 @@ const OrderDashboard: React.FC<OrderDashboardProps> = ({
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white w-full max-w-4xl h-[80vh] rounded-xl shadow-2xl overflow-hidden flex flex-col">
+      <div className="relative bg-white w-full max-w-4xl h-[85vh] rounded-xl shadow-2xl overflow-hidden flex flex-col">
         <div className="bg-[#131921] p-4 text-white flex justify-between items-center shrink-0">
           <h2 className="text-xl font-bold flex items-center gap-2">
-            <Package className="text-[#febd69]" /> Quản lý Đơn hàng & Thanh toán
+            <Package className="text-[#febd69]" /> Quản lý Đơn hàng & Kho hàng
           </h2>
           <button onClick={onClose} className="hover:bg-gray-700 p-1 rounded"><X size={24} /></button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
+        <div className="flex-1 overflow-y-auto p-6 bg-gray-50 custom-scrollbar">
           
+          {/* Inventory Section (New) */}
+          <div className="mb-8">
+             <h3 className="text-lg font-bold mb-4 flex items-center gap-2 border-b pb-2 border-gray-200 text-gray-800">
+              <span className="bg-purple-100 text-purple-800 w-6 h-6 rounded-full flex items-center justify-center text-xs border border-purple-200">
+                <Box size={14}/>
+              </span>
+              Kho hàng của tôi ({myInventory.length})
+            </h3>
+            {myInventory.length === 0 ? (
+                 <div className="bg-white p-6 rounded-xl border border-dashed border-gray-300 text-center text-gray-400">
+                    <p>Kho hàng trống. Hãy đăng bán sản phẩm để thấy ở đây.</p>
+                 </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {myInventory.map(item => (
+                        <div key={item.id} className="bg-white p-3 rounded-lg shadow-sm border border-gray-200 flex items-center gap-3">
+                            <img src={item.image} className="w-12 h-12 object-cover rounded bg-gray-100" />
+                            <div className="flex-1 min-w-0">
+                                <h4 className="font-bold text-sm truncate">{item.title}</h4>
+                                <div className="flex items-center gap-2 text-xs mt-1">
+                                    <span className="font-bold text-[#b12704]">${item.price}</span>
+                                    {item.type === ItemType.AUCTION ? (
+                                        <span className="text-red-600 bg-red-50 px-1.5 py-0.5 rounded flex items-center gap-0.5"><Gavel size={10}/> Đấu giá</span>
+                                    ) : (
+                                        <span className="text-green-600 bg-green-50 px-1.5 py-0.5 rounded flex items-center gap-0.5"><ShoppingBag size={10}/> Mua ngay</span>
+                                    )}
+                                </div>
+                            </div>
+                            <button className="text-gray-400 hover:text-red-500 p-2" title="Xóa">
+                                <Trash2 size={16} />
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            )}
+          </div>
+
           {/* Sales Section */}
           <div className="mb-8">
-            <h3 className="text-lg font-bold mb-4 flex items-center gap-2 border-b pb-2 border-gray-200">
+            <h3 className="text-lg font-bold mb-4 flex items-center gap-2 border-b pb-2 border-gray-200 text-gray-800">
               <span className="bg-[#febd69] text-black w-6 h-6 rounded-full flex items-center justify-center text-xs">S</span>
-              Đơn bán hàng của tôi (Tiền đang được giữ: ${mySales.reduce((sum, p) => p.status !== OrderStatus.COMPLETED ? sum + p.price : sum, 0).toFixed(2)})
+              Đơn bán hàng (Doanh thu tạm giữ: ${mySales.reduce((sum, p) => p.status !== OrderStatus.COMPLETED ? sum + p.price : sum, 0).toFixed(2)})
             </h3>
             
             {mySales.length === 0 ? (
-              <p className="text-gray-400 text-sm italic">Chưa có đơn hàng nào cần xử lý.</p>
+              <p className="text-gray-400 text-sm italic ml-2">Chưa có đơn hàng nào cần xử lý.</p>
             ) : (
               <div className="space-y-4">
                 {mySales.map(item => (
@@ -103,12 +139,12 @@ const OrderDashboard: React.FC<OrderDashboardProps> = ({
 
           {/* Purchases Section */}
           <div>
-            <h3 className="text-lg font-bold mb-4 flex items-center gap-2 border-b pb-2 border-gray-200">
+            <h3 className="text-lg font-bold mb-4 flex items-center gap-2 border-b pb-2 border-gray-200 text-gray-800">
               <span className="bg-blue-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">B</span>
               Đơn mua hàng của tôi
             </h3>
              {myPurchases.length === 0 ? (
-              <p className="text-gray-400 text-sm italic">Bạn chưa mua đơn hàng nào.</p>
+              <p className="text-gray-400 text-sm italic ml-2">Bạn chưa mua đơn hàng nào.</p>
             ) : (
               <div className="space-y-4">
                 {myPurchases.map(item => (

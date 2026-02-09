@@ -429,6 +429,7 @@ const App: React.FC = () => {
           onClose={() => setIsCreateStreamModalOpen(false)}
           onStartStream={handleCreateStream}
           myProducts={products.filter(p => p.sellerId === 'currentUser')}
+          onOpenSellModal={() => setIsSellModalOpen(true)}
         />
       )}
 
