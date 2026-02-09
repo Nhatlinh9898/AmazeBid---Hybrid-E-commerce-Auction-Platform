@@ -97,3 +97,15 @@ export interface Message {
   role: 'user' | 'model';
   text: string;
 }
+
+export interface ContentPost {
+  id: string;
+  title: string;
+  content: string; // Markdown or HTML
+  keywords: string[];
+  generatedImages: string[];
+  generatedVideo?: string;
+  status: 'DRAFT' | 'PUBLISHED';
+  platform: 'BLOG' | 'FACEBOOK' | 'INSTAGRAM' | 'TIKTOK';
+  createdAt: string;
+}

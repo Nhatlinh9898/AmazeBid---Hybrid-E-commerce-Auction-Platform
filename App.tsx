@@ -10,7 +10,8 @@ import CreateStreamModal from './components/CreateStreamModal';
 import BidModal from './components/BidModal';
 import AuthModal from './components/AuthModal'; 
 import UserProfile from './components/UserProfile'; 
-import CustomerServiceModal from './components/CustomerServiceModal'; // New Import
+import CustomerServiceModal from './components/CustomerServiceModal'; 
+import ContentStudioModal from './components/ContentStudioModal'; // New Import
 import { AuthProvider, useAuth } from './context/AuthContext'; 
 
 import { MOCK_PRODUCTS, MOCK_STREAMS } from './data';
@@ -34,7 +35,8 @@ const InnerApp: React.FC = () => {
   const [isCreateStreamModalOpen, setIsCreateStreamModalOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [isCustomerServiceOpen, setIsCustomerServiceOpen] = useState(false); // New State
+  const [isCustomerServiceOpen, setIsCustomerServiceOpen] = useState(false);
+  const [isContentStudioOpen, setIsContentStudioOpen] = useState(false); // New State
 
   // Live Stream States
   const [activeStream, setActiveStream] = useState<LiveStream | null>(null);
@@ -213,6 +215,7 @@ const InnerApp: React.FC = () => {
         onOpenAuth={() => setIsAuthModalOpen(true)}
         onOpenProfile={() => setIsProfileOpen(true)}
         onOpenCustomerService={() => setIsCustomerServiceOpen(true)}
+        onOpenContentStudio={() => setIsContentStudioOpen(true)}
       />
 
       <main className="max-w-[1500px] mx-auto px-4 py-6">
@@ -517,6 +520,12 @@ const InnerApp: React.FC = () => {
       <CustomerServiceModal 
         isOpen={isCustomerServiceOpen}
         onClose={() => setIsCustomerServiceOpen(false)}
+      />
+      
+      {/* Content Studio Modal (AI Creative) */}
+      <ContentStudioModal
+        isOpen={isContentStudioOpen}
+        onClose={() => setIsContentStudioOpen(false)}
       />
 
       {/* Notification Toast */}

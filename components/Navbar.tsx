@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Search, ShoppingCart, User as UserIcon, MapPin, Gavel, LayoutGrid, PlusCircle, Package, Video, LogIn, ChevronDown } from 'lucide-react';
+import { Search, ShoppingCart, User as UserIcon, MapPin, Gavel, LayoutGrid, PlusCircle, Package, Video, LogIn, ChevronDown, Sparkles } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 interface NavbarProps {
@@ -13,12 +13,13 @@ interface NavbarProps {
   onViewLiveStreams: () => void;
   onOpenAuth: () => void;
   onOpenProfile: () => void;
-  onOpenCustomerService: () => void; // New prop
+  onOpenCustomerService: () => void;
+  onOpenContentStudio: () => void; // New Prop
 }
 
 const Navbar: React.FC<NavbarProps> = ({ 
   cartCount, onSearch, openCart, openSellModal, openOrders, 
-  onOpenLiveStudio, onViewLiveStreams, onOpenAuth, onOpenProfile, onOpenCustomerService 
+  onOpenLiveStudio, onViewLiveStreams, onOpenAuth, onOpenProfile, onOpenCustomerService, onOpenContentStudio
 }) => {
   const { user } = useAuth();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -145,6 +146,12 @@ const Navbar: React.FC<NavbarProps> = ({
             <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
             Live Auctions
         </span>
+        <span 
+            onClick={user ? onOpenContentStudio : onOpenAuth}
+            className="hover:border-white border border-transparent p-1 rounded cursor-pointer flex items-center gap-1 text-blue-300 font-bold"
+        >
+            <Sparkles size={14} /> Studio Sáng tạo (AI)
+        </span>
         <span className="hover:border-white border border-transparent p-1 rounded cursor-pointer">Siêu Ưu Đãi</span>
         <span 
             onClick={onOpenCustomerService}
@@ -152,7 +159,6 @@ const Navbar: React.FC<NavbarProps> = ({
         >
             Dịch vụ khách hàng
         </span>
-        <span className="hover:border-white border border-transparent p-1 rounded cursor-pointer">Bán hàng</span>
       </div>
     </header>
   );
