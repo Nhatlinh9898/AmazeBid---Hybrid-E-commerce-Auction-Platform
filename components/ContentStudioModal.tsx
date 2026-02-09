@@ -1,6 +1,6 @@
 
-import React, { useState, useRef } from 'react';
-import { X, PenTool, Image as ImageIcon, Video, Share2, Sparkles, LayoutTemplate, Save, Download, ChevronRight, Wand2, Globe, CheckCircle2, Copy, ShoppingBag, Plus } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { X, PenTool, Image as ImageIcon, Video, Share2, Sparkles, LayoutTemplate, Save, Download, ChevronRight, Wand2, Globe, CheckCircle2, Copy, ShoppingBag, Plus, RefreshCw, RotateCcw } from 'lucide-react';
 import { generateSEOContent, generateProductImage, generateProductVideo, generateKeywordSuggestions } from '../services/geminiService';
 import { ContentPost, Product } from '../types';
 
@@ -12,7 +12,7 @@ interface ContentStudioModalProps {
 }
 
 const ContentStudioModal: React.FC<ContentStudioModalProps> = ({ isOpen, onClose, onSavePost, myProducts = [] }) => {
-  // Steps: 1=Info, 2=Text, 3=Visuals, 4=Review
+  // Steps: 1=Info, 2=Text, 3=Visuals, 4=Review, 5=Success
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -36,6 +36,21 @@ const ContentStudioModal: React.FC<ContentStudioModalProps> = ({ isOpen, onClose
   const [imagePrompt, setImagePrompt] = useState('');
   const [videoPrompt, setVideoPrompt] = useState('');
 
+  // Reset logic on open if needed, or manual reset
+  const resetForm = () => {
+      setStep(1);
+      setProductName('');
+      setDescription('');
+      setKeywords('');
+      setSuggestedKeywords([]);
+      setGeneratedContent('');
+      setGeneratedImages([]);
+      setGeneratedVideo(null);
+      setImagePrompt('');
+      setVideoPrompt('');
+      setSelectedProduct(null);
+  };
+
   if (!isOpen) return null;
 
   // --- Handlers ---
@@ -55,7 +70,11 @@ const ContentStudioModal: React.FC<ContentStudioModalProps> = ({ isOpen, onClose
       setIsGeneratingKeywords(true);
       try {
           const list = await generateKeywordSuggestions(productName, description || productName);
-          setSuggestedKeywords(list);
+          if (list && list.length > 0) {
+              setSuggestedKeywords(list);
+          } else {
+              alert("Không thể tạo từ khóa lúc này (Có thể do giới hạn API). Vui lòng thử lại sau hoặc nhập thủ công.");
+          }
       } catch(e) {
           alert("Lỗi tạo từ khóa.");
       } finally {
@@ -134,7 +153,7 @@ const ContentStudioModal: React.FC<ContentStudioModalProps> = ({ isOpen, onClose
           };
           onSavePost(newPost);
       }
-      onClose();
+      setStep(5); // Go to Success Step
   };
 
   // --- Render Steps ---
@@ -440,6 +459,31 @@ const ContentStudioModal: React.FC<ContentStudioModalProps> = ({ isOpen, onClose
       </div>
   );
 
+  const renderStep5_Success = () => (
+      <div className="h-full flex flex-col items-center justify-center animate-in zoom-in">
+          <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mb-6">
+              <CheckCircle2 size={48} className="text-green-600" />
+          </div>
+          <h2 className="text-3xl font-black text-gray-900 mb-2">Đăng bài thành công!</h2>
+          <p className="text-gray-500 mb-8 text-center max-w-md">Bài viết của bạn đã được xuất bản. Bạn có muốn tiếp tục tạo nội dung mới không?</p>
+          
+          <div className="flex gap-4">
+              <button 
+                onClick={onClose}
+                className="px-6 py-3 border border-gray-300 rounded-xl font-bold hover:bg-gray-50 text-gray-700"
+              >
+                  Đóng Studio
+              </button>
+              <button 
+                onClick={resetForm}
+                className="px-6 py-3 bg-[#131921] text-white rounded-xl font-bold hover:bg-black shadow-lg flex items-center gap-2"
+              >
+                  <RefreshCw size={18}/> Tạo bài viết mới
+              </button>
+          </div>
+      </div>
+  );
+
   return (
     <div className="fixed inset-0 z-[250] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in" onClick={onClose} />
@@ -451,6 +495,13 @@ const ContentStudioModal: React.FC<ContentStudioModalProps> = ({ isOpen, onClose
                 <Wand2 className="text-[#febd69]"/> Content<span className="text-[#febd69]">Studio</span>
             </h2>
             
+            <button 
+                onClick={resetForm}
+                className="mb-6 w-full py-2 bg-[#febd69] text-black rounded-lg font-bold text-sm flex items-center justify-center gap-2 hover:bg-[#f3a847] transition-all"
+            >
+                <Plus size={16}/> Dự án mới
+            </button>
+            
             <div className="space-y-2 relative">
                 {/* Step Indicators */}
                 {[
@@ -458,20 +509,18 @@ const ContentStudioModal: React.FC<ContentStudioModalProps> = ({ isOpen, onClose
                     { id: 2, label: 'AI Writer', icon: PenTool },
                     { id: 3, label: 'Media (Ảnh/Video)', icon: ImageIcon },
                     { id: 4, label: 'Review & Đăng', icon: Share2 },
+                    ...(step === 5 ? [{ id: 5, label: 'Hoàn tất', icon: CheckCircle2 }] : [])
                 ].map((s, idx) => (
                     <div 
                         key={s.id}
-                        className={`flex items-center gap-3 p-3 rounded-lg transition-all ${step === s.id ? 'bg-[#febd69] text-black font-bold' : 'text-gray-400'}`}
+                        className={`flex items-center gap-3 p-3 rounded-lg transition-all ${step === s.id ? 'bg-white/10 text-white font-bold' : 'text-gray-400'}`}
                     >
-                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs border ${step === s.id ? 'border-black' : 'border-gray-500'}`}>
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs border ${step === s.id ? 'border-white' : 'border-gray-500'}`}>
                             {step > s.id ? <CheckCircle2 size={14}/> : s.id}
                         </div>
                         <span className="text-sm">{s.label}</span>
                     </div>
                 ))}
-                
-                {/* Connecting Line (Visual only) */}
-                <div className="absolute left-[23px] top-8 bottom-8 w-px bg-gray-700 -z-10"></div>
             </div>
 
             <div className="mt-auto bg-gray-800 p-4 rounded-xl text-xs text-gray-400">
@@ -486,7 +535,16 @@ const ContentStudioModal: React.FC<ContentStudioModalProps> = ({ isOpen, onClose
 
         {/* Main Workspace */}
         <div className="flex-1 flex flex-col relative h-full">
-            <div className="absolute top-4 right-4 z-10">
+            <div className="absolute top-4 right-4 z-10 flex gap-2">
+                {step < 5 && (
+                    <button 
+                        onClick={resetForm} 
+                        className="p-2 hover:bg-gray-100 rounded-full bg-white shadow-sm border border-gray-100 text-gray-500"
+                        title="Làm mới"
+                    >
+                        <RotateCcw size={20}/>
+                    </button>
+                )}
                 <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full bg-white shadow-sm border border-gray-100">
                     <X size={20} className="text-gray-500"/>
                 </button>
@@ -497,6 +555,7 @@ const ContentStudioModal: React.FC<ContentStudioModalProps> = ({ isOpen, onClose
                 {step === 2 && renderStep2_Text()}
                 {step === 3 && renderStep3_Visuals()}
                 {step === 4 && renderStep4_Review()}
+                {step === 5 && renderStep5_Success()}
             </div>
         </div>
       </div>
