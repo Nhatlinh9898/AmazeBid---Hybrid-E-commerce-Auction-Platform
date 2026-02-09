@@ -31,6 +31,17 @@ export interface Product {
   payoutMethod?: string; // e.g., "Bank **** 1234"
 }
 
+export interface LiveStream {
+  id: string;
+  title: string;
+  viewerCount: number;
+  hostName: string;
+  hostAvatar: string;
+  thumbnail: string;
+  featuredProductIds: string[];
+  isLive: boolean;
+}
+
 export interface CartItem extends Product {
   quantity: number;
 }

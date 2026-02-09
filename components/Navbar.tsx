@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Search, ShoppingCart, User, MapPin, Gavel, LayoutGrid, PlusCircle, Package } from 'lucide-react';
+import { Search, ShoppingCart, User, MapPin, Gavel, LayoutGrid, PlusCircle, Package, Video } from 'lucide-react';
 
 interface NavbarProps {
   cartCount: number;
@@ -8,9 +8,11 @@ interface NavbarProps {
   openCart: () => void;
   openSellModal: () => void;
   openOrders: () => void;
+  onOpenLiveStudio: () => void;
+  onViewLiveStreams: () => void;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ cartCount, onSearch, openCart, openSellModal, openOrders }) => {
+const Navbar: React.FC<NavbarProps> = ({ cartCount, onSearch, openCart, openSellModal, openOrders, onOpenLiveStudio, onViewLiveStreams }) => {
   return (
     <header className="bg-[#131921] text-white sticky top-0 z-50">
       {/* Top Bar */}
@@ -50,14 +52,27 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onSearch, openCart, openSell
           </button>
         </div>
 
-        {/* Sell Button */}
-        <button 
-          onClick={openSellModal}
-          className="hidden md:flex items-center gap-2 p-2 border-2 border-[#febd69] rounded hover:bg-[#febd69] hover:text-black transition-all group"
-        >
-          <PlusCircle size={20} className="text-[#febd69] group-hover:text-black" />
-          <span className="font-bold text-sm">Đăng bán</span>
-        </button>
+        {/* Action Buttons */}
+        <div className="flex items-center gap-2">
+            {/* Go Live Button */}
+            <button 
+            onClick={onOpenLiveStudio}
+            className="hidden md:flex items-center gap-2 p-2 border border-gray-600 rounded hover:border-[#febd69] hover:text-[#febd69] transition-all"
+            title="AmazeLive Studio"
+            >
+            <Video size={20} />
+            <span className="font-bold text-sm">Live Studio</span>
+            </button>
+
+            {/* Sell Button */}
+            <button 
+            onClick={openSellModal}
+            className="hidden md:flex items-center gap-2 p-2 border-2 border-[#febd69] rounded hover:bg-[#febd69] hover:text-black transition-all group"
+            >
+            <PlusCircle size={20} className="text-[#febd69] group-hover:text-black" />
+            <span className="font-bold text-sm">Đăng bán</span>
+            </button>
+        </div>
 
         {/* Orders & Dashboard */}
         <div 
@@ -84,15 +99,21 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onSearch, openCart, openSell
       </div>
 
       {/* Sub-Nav */}
-      <div className="bg-[#232f3e] px-4 py-1 flex items-center gap-4 text-sm font-medium">
+      <div className="bg-[#232f3e] px-4 py-1 flex items-center gap-4 text-sm font-medium overflow-x-auto no-scrollbar">
         <div className="flex items-center gap-1 cursor-pointer hover:border-white border border-transparent p-1 rounded">
           <LayoutGrid size={18} />
           <span>Tất cả</span>
         </div>
+        <span 
+            onClick={onViewLiveStreams}
+            className="hover:border-white border border-transparent p-1 rounded cursor-pointer font-bold text-[#febd69] flex items-center gap-1"
+        >
+            <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+            Live Auctions
+        </span>
         <span className="hover:border-white border border-transparent p-1 rounded cursor-pointer">Siêu Ưu Đãi</span>
         <span className="hover:border-white border border-transparent p-1 rounded cursor-pointer">Dịch vụ khách hàng</span>
         <span className="hover:border-white border border-transparent p-1 rounded cursor-pointer">Bán hàng</span>
-        <span className="hover:border-white border border-transparent p-1 rounded cursor-pointer font-bold text-[#febd69]">Live Auctions</span>
       </div>
     </header>
   );

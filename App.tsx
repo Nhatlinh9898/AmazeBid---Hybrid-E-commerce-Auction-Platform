@@ -5,12 +5,14 @@ import ProductCard from './components/ProductCard';
 import GeminiAssistant from './components/GeminiAssistant';
 import SellModal from './components/SellModal';
 import OrderDashboard from './components/OrderDashboard';
-import { MOCK_PRODUCTS } from './data';
-import { Product, CartItem, ItemType, OrderStatus } from './types';
-import { ShoppingBag, ChevronRight, X, Minus, Plus, Trash2, Sparkles, Filter, PackageSearch, ShieldCheck } from 'lucide-react';
+import LiveStreamViewer from './components/LiveStreamViewer';
+import { MOCK_PRODUCTS, MOCK_STREAMS } from './data';
+import { Product, CartItem, ItemType, OrderStatus, LiveStream } from './types';
+import { ShoppingBag, ChevronRight, X, Minus, Plus, Trash2, Sparkles, Filter, PackageSearch, ShieldCheck, PlayCircle, User } from 'lucide-react';
 
 const App: React.FC = () => {
   const [products, setProducts] = useState<Product[]>(MOCK_PRODUCTS);
+  const [streams] = useState<LiveStream[]>(MOCK_STREAMS);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Tất cả');
   const [filterType, setFilterType] = useState<'ALL' | ItemType>('ALL');
@@ -18,6 +20,12 @@ const App: React.FC = () => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isSellModalOpen, setIsSellModalOpen] = useState(false);
   const [isOrderDashboardOpen, setIsOrderDashboardOpen] = useState(false);
+  
+  // Live Stream States
+  const [activeStream, setActiveStream] = useState<LiveStream | null>(null);
+  const [isLiveStudioOpen, setIsLiveStudioOpen] = useState(false);
+  const [showLiveList, setShowLiveList] = useState(false);
+
   const [notification, setNotification] = useState<string | null>(null);
 
   const categories = ['Tất cả', 'Điện tử', 'Thời trang', 'Đồ cổ', 'Máy tính', 'Nhà cửa', 'Làm đẹp', 'Music'];
@@ -109,30 +117,73 @@ const App: React.FC = () => {
         openCart={() => setIsCartOpen(true)}
         openSellModal={() => setIsSellModalOpen(true)}
         openOrders={() => setIsOrderDashboardOpen(true)}
+        onOpenLiveStudio={() => setIsLiveStudioOpen(true)}
+        onViewLiveStreams={() => {
+            setShowLiveList(!showLiveList);
+            if (!showLiveList) window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
       />
 
       <main className="max-w-[1500px] mx-auto px-4 py-6">
-        {/* Banner Section */}
-        <div className="relative h-[250px] md:h-[350px] mb-8 overflow-hidden rounded-xl shadow-lg group">
-          <img 
-            src="https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?auto=format&fit=crop&q=80&w=1500" 
-            alt="Promotion Banner"
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent flex flex-col justify-center p-8 md:p-12 text-white">
-            <span className="bg-[#febd69] text-black text-xs font-bold px-2 py-1 rounded w-fit mb-4">SỰ KIỆN GIỚI HẠN</span>
-            <h1 className="text-3xl md:text-5xl font-bold mb-4 leading-tight">MUA SẮM THÔNG MINH<br/>ĐẤU GIÁ ĐỈNH CAO</h1>
-            <p className="text-sm md:text-lg text-gray-200 font-medium max-w-lg mb-6">Bảo vệ người mua và người bán với hệ thống thanh toán tạm giữ (Escrow) an toàn tuyệt đối.</p>
-            <div className="flex gap-4">
-              <button 
-                onClick={() => setIsSellModalOpen(true)}
-                className="bg-[#febd69] text-black font-bold px-6 py-3 rounded-lg hover:bg-[#f3a847] transition-all transform hover:-translate-y-1 shadow-lg"
-              >
-                Đăng bán ngay
-              </button>
+        
+        {/* Live Stream List Section */}
+        {showLiveList && (
+            <div className="mb-10 animate-in slide-in-from-top-4 fade-in">
+                <div className="flex items-center gap-2 mb-4">
+                    <div className="w-3 h-3 bg-red-600 rounded-full animate-pulse"/>
+                    <h2 className="text-xl font-bold uppercase tracking-wider">Đang phát trực tiếp</h2>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {streams.map(stream => (
+                        <div 
+                            key={stream.id}
+                            onClick={() => setActiveStream(stream)}
+                            className="relative aspect-video rounded-xl overflow-hidden cursor-pointer group shadow-lg hover:shadow-2xl transition-all"
+                        >
+                            <img src={stream.thumbnail} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-4 text-white">
+                                <div className="absolute top-3 left-3 bg-red-600 px-2 py-0.5 rounded text-[10px] font-bold uppercase">Live</div>
+                                <div className="absolute top-3 right-3 bg-black/50 px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1">
+                                    <User size={10} /> {stream.viewerCount}
+                                </div>
+                                <h3 className="font-bold text-lg leading-tight mb-1">{stream.title}</h3>
+                                <div className="flex items-center gap-2">
+                                    <img src={stream.hostAvatar} className="w-6 h-6 rounded-full border border-white" />
+                                    <span className="text-xs font-medium text-gray-300">{stream.hostName}</span>
+                                </div>
+                                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20 backdrop-blur-[1px]">
+                                    <PlayCircle size={48} className="text-white drop-shadow-lg" />
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
             </div>
-          </div>
-        </div>
+        )}
+
+        {/* Banner Section (Only show if not viewing live list excessively) */}
+        {!showLiveList && (
+            <div className="relative h-[250px] md:h-[350px] mb-8 overflow-hidden rounded-xl shadow-lg group">
+            <img 
+                src="https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?auto=format&fit=crop&q=80&w=1500" 
+                alt="Promotion Banner"
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent flex flex-col justify-center p-8 md:p-12 text-white">
+                <span className="bg-[#febd69] text-black text-xs font-bold px-2 py-1 rounded w-fit mb-4">SỰ KIỆN GIỚI HẠN</span>
+                <h1 className="text-3xl md:text-5xl font-bold mb-4 leading-tight">MUA SẮM THÔNG MINH<br/>ĐẤU GIÁ ĐỈNH CAO</h1>
+                <p className="text-sm md:text-lg text-gray-200 font-medium max-w-lg mb-6">Bảo vệ người mua và người bán với hệ thống thanh toán tạm giữ (Escrow) an toàn tuyệt đối.</p>
+                <div className="flex gap-4">
+                <button 
+                    onClick={() => setIsSellModalOpen(true)}
+                    className="bg-[#febd69] text-black font-bold px-6 py-3 rounded-lg hover:bg-[#f3a847] transition-all transform hover:-translate-y-1 shadow-lg"
+                >
+                    Đăng bán ngay
+                </button>
+                </div>
+            </div>
+            </div>
+        )}
 
         {/* Categories Tab Bar */}
         <div className="bg-white p-2 rounded-xl shadow-sm mb-8 flex items-center overflow-x-auto no-scrollbar gap-2 sticky top-[108px] z-40 border border-gray-100">
@@ -321,6 +372,20 @@ const App: React.FC = () => {
         currentUserId="currentUser"
         onUpdateStatus={handleOrderStatusUpdate}
       />
+
+      {/* Live Stream Viewer & Studio */}
+      {(activeStream || isLiveStudioOpen) && (
+          <LiveStreamViewer 
+            stream={activeStream || undefined} // If activeStream is null but isLiveStudioOpen is true, pass undefined to trigger Studio mode
+            products={products}
+            onClose={() => {
+                setActiveStream(null);
+                setIsLiveStudioOpen(false);
+            }}
+            onPlaceBid={handlePlaceBid}
+            onAddToCart={handleAddToCart}
+          />
+      )}
 
       {/* Notification Toast */}
       {notification && (

@@ -1,7 +1,8 @@
 
-import React, { useState } from 'react';
-import { X, Upload, Gavel, DollarSign, Tag, Info, PlusCircle, CreditCard, Landmark, Wallet, CheckCircle2 } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { X, Upload, Gavel, DollarSign, Tag, Info, PlusCircle, CreditCard, Landmark, Wallet, CheckCircle2, Sparkles, Search } from 'lucide-react';
 import { Product, ItemType, OrderStatus } from '../types';
+import { PRODUCT_TEMPLATES } from '../data';
 
 interface SellModalProps {
   onClose: () => void;
@@ -10,6 +11,9 @@ interface SellModalProps {
 
 const SellModal: React.FC<SellModalProps> = ({ onClose, onAddProduct }) => {
   const [step, setStep] = useState(1);
+  const [suggestions, setSuggestions] = useState<typeof PRODUCT_TEMPLATES>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -19,6 +23,48 @@ const SellModal: React.FC<SellModalProps> = ({ onClose, onAddProduct }) => {
     image: `https://picsum.photos/seed/${Math.random()}/400/400`,
     payoutMethod: 'BANK_TRANSFER'
   });
+
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [wrapperRef]);
+
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setFormData({ ...formData, title: value });
+
+    if (value.length > 1) {
+      const matches = PRODUCT_TEMPLATES.filter(item => 
+        item.title.toLowerCase().includes(value.toLowerCase())
+      );
+      setSuggestions(matches);
+      setShowSuggestions(true);
+    } else {
+      setShowSuggestions(false);
+    }
+  };
+
+  const applyTemplate = (template: typeof PRODUCT_TEMPLATES[0]) => {
+    setFormData({
+      ...formData,
+      title: template.title,
+      description: template.description,
+      price: template.price.toString(),
+      category: template.category,
+      image: template.image,
+      // Defaulting to Fixed Price for catalog items, but user can change
+      type: ItemType.FIXED_PRICE 
+    });
+    setShowSuggestions(false);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,24 +122,57 @@ const SellModal: React.FC<SellModalProps> = ({ onClose, onAddProduct }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* Step 1: Product Info */}
               <div className="space-y-6">
-                <div>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase mb-2 tracking-wider">Thông tin cơ bản</label>
-                  <input 
-                    required
-                    autoFocus
-                    className="w-full border-2 border-gray-100 p-3 rounded-xl focus:border-[#febd69] focus:ring-0 outline-none transition-all placeholder:text-gray-300 text-sm font-medium"
-                    placeholder="Tên sản phẩm của bạn..."
-                    value={formData.title}
-                    onChange={e => setFormData({...formData, title: e.target.value})}
-                  />
+                <div ref={wrapperRef} className="relative">
+                  <label className="block text-[10px] font-black text-gray-400 uppercase mb-2 tracking-wider flex justify-between">
+                    <span>Tên sản phẩm</span>
+                    <span className="text-[#febd69] flex items-center gap-1 normal-case"><Sparkles size={10} /> Tự động điền</span>
+                  </label>
+                  <div className="relative">
+                    <input 
+                        required
+                        autoFocus
+                        className="w-full border-2 border-gray-100 p-3 pl-4 rounded-xl focus:border-[#febd69] focus:ring-0 outline-none transition-all placeholder:text-gray-300 text-sm font-medium"
+                        placeholder="VD: iPhone 15, Rolex..."
+                        value={formData.title}
+                        onChange={handleTitleChange}
+                        onFocus={() => {
+                            if(formData.title.length > 1 && suggestions.length > 0) setShowSuggestions(true);
+                        }}
+                    />
+                    {showSuggestions && suggestions.length > 0 && (
+                        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl border border-gray-100 z-50 overflow-hidden max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-2">
+                            <div className="bg-gray-50 px-4 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider border-b border-gray-100">
+                                Gợi ý từ kho dữ liệu
+                            </div>
+                            {suggestions.map((item, idx) => (
+                                <div 
+                                    key={idx}
+                                    onClick={() => applyTemplate(item)}
+                                    className="p-3 hover:bg-blue-50 cursor-pointer flex items-center gap-3 transition-colors border-b border-gray-50 last:border-0"
+                                >
+                                    <img src={item.image} className="w-10 h-10 rounded bg-gray-200 object-cover" />
+                                    <div>
+                                        <p className="font-bold text-sm text-[#131921]">{item.title}</p>
+                                        <p className="text-xs text-gray-400 truncate w-48">{item.category}</p>
+                                    </div>
+                                    <div className="ml-auto text-xs font-bold text-[#febd69] bg-[#131921] px-2 py-1 rounded">
+                                        Auto-fill
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-gray-400 mt-1 italic">Nhập tên để tìm kiếm thông tin có sẵn từ catalog.</p>
                 </div>
 
                 <div>
+                  <label className="block text-[10px] font-black text-gray-400 uppercase mb-2 tracking-wider">Mô tả chi tiết</label>
                   <textarea 
                     required
                     rows={4}
                     className="w-full border-2 border-gray-100 p-3 rounded-xl focus:border-[#febd69] focus:ring-0 outline-none transition-all placeholder:text-gray-300 text-sm resize-none"
-                    placeholder="Mô tả chi tiết tình trạng, tính năng..."
+                    placeholder="Mô tả sẽ được tự động điền nếu chọn gợi ý..."
                     value={formData.description}
                     onChange={e => setFormData({...formData, description: e.target.value})}
                   />
@@ -116,11 +195,23 @@ const SellModal: React.FC<SellModalProps> = ({ onClose, onAddProduct }) => {
               </div>
 
               <div className="space-y-6">
-                <div className="bg-gray-50 p-6 rounded-2xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center group hover:border-[#febd69] transition-all cursor-pointer">
-                  <div className="p-3 bg-white rounded-full shadow-sm mb-3 text-gray-400 group-hover:text-[#febd69] transition-colors">
-                    <Upload size={28} />
-                  </div>
-                  <p className="text-xs font-bold text-gray-500">Kéo thả hoặc tải ảnh lên</p>
+                <div className="bg-gray-50 p-6 rounded-2xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center group hover:border-[#febd69] transition-all cursor-pointer relative overflow-hidden">
+                   {/* Preview Image if Auto-filled */}
+                   {formData.image.includes('picsum') ? (
+                      <>
+                        <div className="p-3 bg-white rounded-full shadow-sm mb-3 text-gray-400 group-hover:text-[#febd69] transition-colors z-10">
+                            <Upload size={28} />
+                        </div>
+                        <p className="text-xs font-bold text-gray-500 z-10">Kéo thả hoặc tải ảnh lên</p>
+                      </>
+                   ) : (
+                       <>
+                        <img src={formData.image} className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-30 transition-opacity" />
+                        <div className="z-10 bg-white/80 backdrop-blur px-4 py-2 rounded-full shadow-sm">
+                            <p className="text-xs font-bold text-gray-800 flex items-center gap-1"><CheckCircle2 size={12} className="text-green-600"/> Ảnh từ catalog</p>
+                        </div>
+                       </>
+                   )}
                 </div>
 
                 <div className="bg-gray-50 p-4 rounded-xl space-y-4">
@@ -145,7 +236,7 @@ const SellModal: React.FC<SellModalProps> = ({ onClose, onAddProduct }) => {
 
                 <div>
                   <label className="block text-[10px] font-black text-gray-400 uppercase mb-2 tracking-wider">
-                    {formData.type === ItemType.FIXED_PRICE ? 'Giá bán' : 'Giá khởi điểm'}
+                    {formData.type === ItemType.FIXED_PRICE ? 'Giá bán (Dự kiến)' : 'Giá khởi điểm'}
                   </label>
                   <div className="relative">
                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">$</div>
