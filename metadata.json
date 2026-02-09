@@ -1,0 +1,8 @@
+{
+  "name": "AmazeBid - Hybrid E-commerce & Auction Platform",
+  "description": "A high-end marketplace combining the robust shopping experience of Amazon with the competitive bidding excitement of Yahoo! Auctions, enhanced by Gemini AI.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
