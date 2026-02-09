@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Search, ShoppingCart, User as UserIcon, MapPin, Gavel, LayoutGrid, PlusCircle, Package, Video, LogIn, ChevronDown, Sparkles } from 'lucide-react';
+import { Search, ShoppingCart, User as UserIcon, MapPin, Gavel, LayoutGrid, PlusCircle, Package, Video, LogIn, ChevronDown, Sparkles, Zap } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 interface NavbarProps {
@@ -14,12 +14,13 @@ interface NavbarProps {
   onOpenAuth: () => void;
   onOpenProfile: () => void;
   onOpenCustomerService: () => void;
-  onOpenContentStudio: () => void; // New Prop
+  onOpenContentStudio: () => void;
+  onOpenSuperDeals: () => void; // New Prop
 }
 
 const Navbar: React.FC<NavbarProps> = ({ 
   cartCount, onSearch, openCart, openSellModal, openOrders, 
-  onOpenLiveStudio, onViewLiveStreams, onOpenAuth, onOpenProfile, onOpenCustomerService, onOpenContentStudio
+  onOpenLiveStudio, onViewLiveStreams, onOpenAuth, onOpenProfile, onOpenCustomerService, onOpenContentStudio, onOpenSuperDeals
 }) => {
   const { user } = useAuth();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -152,7 +153,12 @@ const Navbar: React.FC<NavbarProps> = ({
         >
             <Sparkles size={14} /> Studio Sáng tạo (AI)
         </span>
-        <span className="hover:border-white border border-transparent p-1 rounded cursor-pointer">Siêu Ưu Đãi</span>
+        <span 
+            onClick={onOpenSuperDeals}
+            className="hover:border-white border border-transparent p-1 rounded cursor-pointer text-red-400 font-bold flex items-center gap-1"
+        >
+            <Zap size={14} className="animate-pulse" /> Siêu Ưu Đãi
+        </span>
         <span 
             onClick={onOpenCustomerService}
             className="hover:border-white border border-transparent p-1 rounded cursor-pointer"

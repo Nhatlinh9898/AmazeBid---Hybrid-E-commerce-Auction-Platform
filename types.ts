@@ -58,6 +58,7 @@ export interface Product {
   title: string;
   description: string;
   price: number; // For Auction: Starting Price
+  originalPrice?: number; // New: Original Price for discounts
   currentBid?: number;
   bidCount?: number;
   bidHistory?: Bid[]; // New: List of bids

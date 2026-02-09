@@ -11,7 +11,8 @@ import BidModal from './components/BidModal';
 import AuthModal from './components/AuthModal'; 
 import UserProfile from './components/UserProfile'; 
 import CustomerServiceModal from './components/CustomerServiceModal'; 
-import ContentStudioModal from './components/ContentStudioModal'; // New Import
+import ContentStudioModal from './components/ContentStudioModal'; 
+import SuperDealsModal from './components/SuperDealsModal'; // New Import
 import { AuthProvider, useAuth } from './context/AuthContext'; 
 
 import { MOCK_PRODUCTS, MOCK_STREAMS } from './data';
@@ -22,7 +23,7 @@ const InnerApp: React.FC = () => {
   const { user } = useAuth();
   const [products, setProducts] = useState<Product[]>(MOCK_PRODUCTS);
   const [streams, setStreams] = useState<LiveStream[]>(MOCK_STREAMS);
-  const [contentPosts, setContentPosts] = useState<ContentPost[]>([]); // State for Content Posts
+  const [contentPosts, setContentPosts] = useState<ContentPost[]>([]); 
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Tất cả');
@@ -38,7 +39,8 @@ const InnerApp: React.FC = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isCustomerServiceOpen, setIsCustomerServiceOpen] = useState(false);
-  const [isContentStudioOpen, setIsContentStudioOpen] = useState(false); // New State
+  const [isContentStudioOpen, setIsContentStudioOpen] = useState(false);
+  const [isSuperDealsOpen, setIsSuperDealsOpen] = useState(false); // New State
 
   // Live Stream States
   const [activeStream, setActiveStream] = useState<LiveStream | null>(null);
@@ -209,6 +211,11 @@ const InnerApp: React.FC = () => {
       return products.filter(p => p.sellerId === user.id);
   }, [products, user]);
 
+  // Filter products for Super Deals (items with discounts)
+  const superDealsProducts = useMemo(() => {
+    return products.filter(p => p.type === ItemType.FIXED_PRICE && (p.originalPrice && p.originalPrice > p.price));
+  }, [products]);
+
   return (
     <div className="min-h-screen bg-[#f3f4f6] pb-20">
       <Navbar 
@@ -229,6 +236,7 @@ const InnerApp: React.FC = () => {
         onOpenProfile={() => setIsProfileOpen(true)}
         onOpenCustomerService={() => setIsCustomerServiceOpen(true)}
         onOpenContentStudio={() => setIsContentStudioOpen(true)}
+        onOpenSuperDeals={() => setIsSuperDealsOpen(true)}
       />
 
       <main className="max-w-[1500px] mx-auto px-4 py-6">
@@ -492,6 +500,14 @@ const InnerApp: React.FC = () => {
           onSubmitBid={(amount) => handleSubmitBid(bidModalProduct, amount)}
         />
       )}
+
+      {/* Super Deals Modal (New) */}
+      <SuperDealsModal
+        isOpen={isSuperDealsOpen}
+        onClose={() => setIsSuperDealsOpen(false)}
+        products={superDealsProducts}
+        onAddToCart={handleAddToCart}
+      />
 
       {/* Order Dashboard */}
       <OrderDashboard 
