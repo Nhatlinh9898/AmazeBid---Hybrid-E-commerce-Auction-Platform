@@ -1,6 +1,40 @@
 
 import { Product, ItemType, OrderStatus, LiveStream } from './types';
 
+// Mock Affiliate Network (Kho hàng chung)
+export const AFFILIATE_NETWORK_ITEMS = [
+  {
+    title: "Kindle Paperwhite (16 GB)",
+    description: "Màn hình 6.8 inch, đèn nền ấm có thể điều chỉnh, thời lượng pin lên đến 10 tuần.",
+    price: 139.99,
+    image: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=400",
+    category: "Electronics",
+    platformName: "Amazon",
+    commissionRate: 8,
+    affiliateLink: "https://amazon.com/dp/B08KTZ8249"
+  },
+  {
+    title: "Nồi chiên không dầu Philips XXL",
+    description: "Công nghệ Rapid Air, giảm 90% lượng dầu mỡ. Dung tích lớn cho cả gia đình.",
+    price: 250.00,
+    image: "https://images.unsplash.com/photo-1626162976644-b00344d51b8c?auto=format&fit=crop&q=80&w=400",
+    category: "Home & Office",
+    platformName: "Shopee",
+    commissionRate: 5,
+    affiliateLink: "https://shopee.vn/philips-xxl"
+  },
+  {
+    title: "Son YSL Rouge Pur Couture",
+    description: "Màu đỏ thuần quyến rũ, chất son mịn mượt, lâu trôi.",
+    price: 38.00,
+    image: "https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&q=80&w=400",
+    category: "Beauty",
+    platformName: "Lazada",
+    commissionRate: 10,
+    affiliateLink: "https://lazada.vn/ysl-lipstick"
+  }
+];
+
 // Mock database for "Auto-fill" feature
 export const PRODUCT_TEMPLATES = [
   {
@@ -100,6 +134,23 @@ export const MOCK_PRODUCTS: Product[] = [
     reviewCount: 0,
     status: OrderStatus.AVAILABLE,
     sellerId: 'currentUser' // Added for testing create stream
+  },
+  {
+    id: 'aff_1',
+    title: 'Sách E-Reader Kindle Paperwhite',
+    description: 'Phiên bản mới nhất từ Amazon. Hàng chính hãng.',
+    price: 139.99,
+    image: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=400",
+    category: "Electronics",
+    type: ItemType.FIXED_PRICE,
+    rating: 4.8,
+    reviewCount: 200,
+    status: OrderStatus.AVAILABLE,
+    sellerId: 'currentUser',
+    isAffiliate: true,
+    platformName: "Amazon",
+    commissionRate: 8,
+    affiliateLink: "https://amazon.com"
   },
   {
     id: '1',

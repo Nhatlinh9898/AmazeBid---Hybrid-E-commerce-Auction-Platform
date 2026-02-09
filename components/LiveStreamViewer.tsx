@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Heart, Send, Gavel, ShoppingCart, User, Share2, Video, Mic, MicOff, Camera, CameraOff, ShoppingBag, CreditCard, CheckCircle2, TrendingUp, Users, VideoOff } from 'lucide-react';
+import { X, Heart, Send, Gavel, ShoppingCart, User, Share2, Video, Mic, MicOff, Camera, CameraOff, ShoppingBag, CreditCard, CheckCircle2, TrendingUp, Users, VideoOff, ExternalLink } from 'lucide-react';
 import { LiveStream, Product, ItemType } from '../types';
 
 interface LiveStreamViewerProps {
@@ -129,6 +129,14 @@ const LiveStreamViewer: React.FC<LiveStreamViewerProps> = ({ stream, products, o
     if (!input.trim()) return;
     setMessages(prev => [...prev, { user: isHost ? 'Bạn (Host)' : 'Bạn', text: input }]);
     setInput('');
+  };
+
+  const handleAction = (product: Product) => {
+      if (product.isAffiliate && product.affiliateLink) {
+          window.open(product.affiliateLink, '_blank');
+      } else {
+          handleOpenCheckout(product);
+      }
   };
 
   const handleOpenCheckout = (product: Product) => {
@@ -279,10 +287,11 @@ const LiveStreamViewer: React.FC<LiveStreamViewerProps> = ({ stream, products, o
                     {/* Action Button: Buy (Viewer) or Unpin (Host - Mock) */}
                     {featuredProduct.type === ItemType.FIXED_PRICE && !isHost && (
                         <button 
-                            onClick={() => handleOpenCheckout(featuredProduct)}
-                            className="bg-[#ffd814] text-black p-2 rounded-lg hover:bg-[#f7ca00]"
+                            onClick={() => handleAction(featuredProduct)}
+                            className={`${featuredProduct.isAffiliate ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-[#ffd814] hover:bg-[#f7ca00] text-black'} p-2 rounded-lg`}
+                            title={featuredProduct.isAffiliate ? "Mua tại sàn liên kết" : "Thêm vào giỏ"}
                         >
-                            <ShoppingBag size={20} />
+                            {featuredProduct.isAffiliate ? <ExternalLink size={20}/> : <ShoppingBag size={20} />}
                         </button>
                     )}
                 </div>

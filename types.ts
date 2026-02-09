@@ -39,6 +39,11 @@ export interface Product {
   status: OrderStatus;
   sellerId: string;
   payoutMethod?: string;
+  // Affiliate Fields
+  isAffiliate?: boolean;
+  affiliateLink?: string;
+  platformName?: string; // e.g. "Amazon", "Shopee"
+  commissionRate?: number; // e.g. 5%
 }
 
 export interface LiveStream {
