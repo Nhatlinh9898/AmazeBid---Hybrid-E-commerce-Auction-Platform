@@ -89,6 +89,19 @@ export const MOCK_STREAMS: LiveStream[] = [
 
 export const MOCK_PRODUCTS: Product[] = [
   {
+    id: '0',
+    title: 'My Custom Keyboard Kit (Full Aluminum)',
+    description: 'Bàn phím cơ Custom nhôm nguyên khối, mạch xuôi, 3 modes kết nối. Hàng sưu tầm của tôi.',
+    price: 120.00,
+    image: 'https://images.unsplash.com/photo-1595225476474-87563907a212?auto=format&fit=crop&q=80&w=400',
+    category: 'Electronics',
+    type: ItemType.FIXED_PRICE,
+    rating: 5.0,
+    reviewCount: 0,
+    status: OrderStatus.AVAILABLE,
+    sellerId: 'currentUser' // Added for testing create stream
+  },
+  {
     id: '1',
     title: 'Sony WH-1000XM5 Noise Canceling Headphones',
     description: 'Industry leading noise cancellation with two processors and 8 microphones.',

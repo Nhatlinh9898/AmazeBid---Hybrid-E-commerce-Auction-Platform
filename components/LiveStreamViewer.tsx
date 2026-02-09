@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Heart, Send, Gavel, ShoppingCart, User, Share2, Video, Mic, MicOff, Camera, CameraOff, ShoppingBag, CreditCard, CheckCircle2, TrendingUp, Users } from 'lucide-react';
+import { X, Heart, Send, Gavel, ShoppingCart, User, Share2, Video, Mic, MicOff, Camera, CameraOff, ShoppingBag, CreditCard, CheckCircle2, TrendingUp, Users, VideoOff } from 'lucide-react';
 import { LiveStream, Product, ItemType } from '../types';
 
 interface LiveStreamViewerProps {
@@ -9,15 +9,19 @@ interface LiveStreamViewerProps {
   onClose: () => void;
   onPlaceBid: (p: Product, amount: number) => void;
   onAddToCart: (p: Product) => void;
+  isHost?: boolean; // Explicit flag for host mode
 }
 
-const LiveStreamViewer: React.FC<LiveStreamViewerProps> = ({ stream, products, onClose, onPlaceBid, onAddToCart }) => {
+const LiveStreamViewer: React.FC<LiveStreamViewerProps> = ({ stream, products, onClose, onPlaceBid, onAddToCart, isHost = false }) => {
   const [messages, setMessages] = useState<{user: string, text: string}[]>([]);
   const [input, setInput] = useState('');
   const [featuredProduct, setFeaturedProduct] = useState<Product | null>(null);
-  const [isStreaming, setIsStreaming] = useState(false); 
+  
+  // Host Controls
+  const [isStreaming, setIsStreaming] = useState(isHost); 
   const [cameraEnabled, setCameraEnabled] = useState(true);
   const [micEnabled, setMicEnabled] = useState(true);
+  const [cameraError, setCameraError] = useState(false); // Track camera permission errors
   
   // Checkout States
   const [checkoutProduct, setCheckoutProduct] = useState<Product | null>(null);
@@ -27,12 +31,19 @@ const LiveStreamViewer: React.FC<LiveStreamViewerProps> = ({ stream, products, o
   const scrollRef = useRef<HTMLDivElement>(null);
   const historyRef = useRef<HTMLDivElement>(null);
 
-  // Filter products
-  const currentProducts = stream 
+  // Filter products: If stream exists, use its list. If host mode (creating), filter by currentUser
+  const currentProducts = stream && stream.featuredProductIds.length > 0
     ? products.filter(p => stream.featuredProductIds.includes(p.id))
-    : products.filter(p => p.sellerId === 'currentUser' || p.sellerId === 'system_store'); 
+    : products.filter(p => p.sellerId === 'currentUser'); 
 
-  // Force update when products change (to reflect new bids)
+  useEffect(() => {
+    // If we have products, feature the first one by default
+    if (currentProducts.length > 0 && !featuredProduct) {
+        setFeaturedProduct(currentProducts[0]);
+    }
+  }, [currentProducts]);
+
+  // Sync featured product updates (e.g. price change)
   useEffect(() => {
     if (featuredProduct) {
         const updated = products.find(p => p.id === featuredProduct.id);
@@ -42,19 +53,20 @@ const LiveStreamViewer: React.FC<LiveStreamViewerProps> = ({ stream, products, o
 
   // Scroll bid history
   useEffect(() => {
-      if (historyRef.current) historyRef.current.scrollTop = 0; // Scroll to top to see newest
+      if (historyRef.current) historyRef.current.scrollTop = 0; 
   }, [featuredProduct?.bidHistory]);
 
+  // Auto-scroll chat
   useEffect(() => {
-    // Auto-scroll chat
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
 
+  // Effect: Handle Stream Simulation (Viewer) OR Camera Access (Host)
   useEffect(() => {
-    if (stream) {
-      setFeaturedProduct(currentProducts[0]);
+    // 1. Viewer Mode: Simulate incoming events
+    if (!isHost && stream) {
       const interval = setInterval(() => {
         const randomUsers = ['TuanAnh99', 'MaiLan', 'HuyHoang', 'SarahJ', 'AuctionHunter'];
         const randomMsgs = ['Sản phẩm đẹp quá!', 'Shop ơi ship HCM không?', 'Chốt đơn!', 'Giá này hời quá', 'Hàng new hay used vậy?'];
@@ -63,22 +75,35 @@ const LiveStreamViewer: React.FC<LiveStreamViewerProps> = ({ stream, products, o
         const text = randomMsgs[Math.floor(Math.random() * randomMsgs.length)];
         
         setMessages(prev => [...prev.slice(-10), { user, text }]);
-
-        // Simulate random interaction/bids if needed
       }, 2500);
       return () => clearInterval(interval);
-    } else {
+    } 
+    
+    // 2. Host Mode: Handle Camera
+    else if (isHost) {
         const startCamera = async () => {
+            setCameraError(false);
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                const streamData = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
                 if (videoRef.current) {
-                    videoRef.current.srcObject = stream;
+                    videoRef.current.srcObject = streamData;
                 }
             } catch (err) {
-                console.error("Camera access denied", err);
+                console.error("Camera access denied or error:", err);
+                setCameraError(true); // Fallback to avatar UI
             }
         };
-        if(isStreaming) startCamera();
+
+        if (isStreaming && cameraEnabled) {
+             startCamera();
+        } else {
+            // Stop tracks if disabled
+            if (videoRef.current && videoRef.current.srcObject) {
+                const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
+                tracks.forEach(track => track.stop());
+                videoRef.current.srcObject = null;
+            }
+        }
         
         return () => {
              if (videoRef.current && videoRef.current.srcObject) {
@@ -87,17 +112,12 @@ const LiveStreamViewer: React.FC<LiveStreamViewerProps> = ({ stream, products, o
              }
         }
     }
-  }, [stream, isStreaming]);
+  }, [stream, isHost, isStreaming, cameraEnabled]);
 
   const handleSendMessage = () => {
     if (!input.trim()) return;
-    setMessages(prev => [...prev, { user: 'Bạn', text: input }]);
+    setMessages(prev => [...prev, { user: isHost ? 'Bạn (Host)' : 'Bạn', text: input }]);
     setInput('');
-  };
-
-  const handleStartStream = () => {
-      setIsStreaming(true);
-      setMessages([{ user: 'Hệ thống', text: 'Luồng trực tiếp đã bắt đầu! Chúc bạn buôn may bán đắt.' }]);
   };
 
   const handleOpenCheckout = (product: Product) => {
@@ -110,7 +130,7 @@ const LiveStreamViewer: React.FC<LiveStreamViewerProps> = ({ stream, products, o
       onAddToCart(checkoutProduct);
       setOrderSuccess(true);
       setTimeout(() => {
-          setMessages(prev => [...prev, { user: 'Bạn', text: `Đã chốt đơn ${checkoutProduct.title}!` }]);
+          setMessages(prev => [...prev, { user: 'Hệ thống', text: `Chúc mừng bạn đã chốt đơn ${checkoutProduct.title}!` }]);
       }, 500);
       setTimeout(() => {
           setCheckoutProduct(null);
@@ -118,7 +138,6 @@ const LiveStreamViewer: React.FC<LiveStreamViewerProps> = ({ stream, products, o
       }, 2000);
   };
 
-  // Auction Logic
   const handleQuickBid = (increment: number) => {
       if (!featuredProduct) return;
       const currentPrice = featuredProduct.currentBid || featuredProduct.price;
@@ -130,11 +149,31 @@ const LiveStreamViewer: React.FC<LiveStreamViewerProps> = ({ stream, products, o
     <div className="fixed inset-0 z-[300] bg-black text-white flex flex-col md:flex-row h-screen w-screen overflow-hidden">
         
       {/* Main Video Area */}
-      <div className="relative flex-1 bg-gray-900 flex items-center justify-center">
-        {stream ? (
+      <div className="relative flex-1 bg-gray-900 flex items-center justify-center overflow-hidden">
+        
+        {/* Render Video or Fallback */}
+        {isHost ? (
+            // HOST VIEW
+            cameraError ? (
+                <div className="flex flex-col items-center justify-center text-gray-400 p-8 text-center animate-in fade-in">
+                    <div className="w-32 h-32 bg-gray-800 rounded-full flex items-center justify-center mb-4 border-2 border-red-600/50">
+                        <VideoOff size={48} />
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-2">Camera không khả dụng</h3>
+                    <p className="max-w-xs">Chúng tôi không thể truy cập camera. Bạn đang phát ở chế độ chỉ có âm thanh (Audio-only) hoặc hiển thị Avatar.</p>
+                </div>
+            ) : (
+                <video 
+                    ref={videoRef}
+                    autoPlay muted playsInline
+                    className={`w-full h-full object-cover mirror-mode ${!cameraEnabled ? 'hidden' : ''}`}
+                />
+            )
+        ) : (
+            // VIEWER VIEW
              <>
                 <img 
-                    src={stream.thumbnail} 
+                    src={stream?.thumbnail} 
                     className="absolute inset-0 w-full h-full object-cover opacity-60 blur-sm" 
                 />
                 <video 
@@ -143,49 +182,55 @@ const LiveStreamViewer: React.FC<LiveStreamViewerProps> = ({ stream, products, o
                     className="relative w-full h-full object-contain max-w-[600px] md:max-w-full"
                 />
              </>
-        ) : (
-            isStreaming ? (
-                 <video 
-                    ref={videoRef}
-                    autoPlay muted playsInline
-                    className="w-full h-full object-cover mirror-mode"
-                />
-            ) : (
-                <div className="text-center p-8">
-                    <div className="w-24 h-24 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-                        <Video size={40} />
-                    </div>
-                    <h2 className="text-2xl font-bold mb-2">Sẵn sàng lên sóng?</h2>
-                    <p className="text-gray-400 mb-6">Kiểm tra ánh sáng và âm thanh trước khi bắt đầu.</p>
-                    <button 
-                        onClick={handleStartStream}
-                        className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-full font-bold text-lg shadow-xl hover:scale-105 transition-all"
-                    >
-                        Bắt đầu Live
-                    </button>
-                </div>
-            )
         )}
 
+        {/* Overlay Controls (Close, Viewers) */}
         <div className="absolute top-4 left-4 flex items-center gap-3 z-10">
-            <button onClick={onClose} className="bg-black/40 backdrop-blur p-2 rounded-full hover:bg-black/60">
+            <button onClick={onClose} className="bg-black/40 backdrop-blur p-2 rounded-full hover:bg-black/60 transition-colors">
                 <X size={24} />
             </button>
-            {stream && (
-                <div className="bg-black/40 backdrop-blur px-3 py-1.5 rounded-full flex items-center gap-2">
-                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                    <span className="font-bold text-sm">LIVE</span>
-                    <span className="text-xs border-l border-gray-500 pl-2 ml-1">{stream.viewerCount.toLocaleString()} xem</span>
-                </div>
-            )}
+            <div className="bg-black/40 backdrop-blur px-3 py-1.5 rounded-full flex items-center gap-2">
+                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                <span className="font-bold text-sm">LIVE</span>
+                <span className="text-xs border-l border-gray-500 pl-2 ml-1">
+                    {isHost ? 'Đang phát' : `${stream?.viewerCount.toLocaleString()} xem`}
+                </span>
+            </div>
+        </div>
+
+        {/* Host Info (Top Right) */}
+        <div className="absolute top-4 right-4 flex items-center gap-2 bg-black/40 backdrop-blur p-1 pr-3 rounded-full z-10">
+            <img 
+                src={stream?.hostAvatar || "https://ui-avatars.com/api/?name=You&background=random"} 
+                className="w-8 h-8 rounded-full border border-white" 
+            />
+            <span className="font-bold text-sm">{stream?.hostName || "Bạn (Host)"}</span>
+            {!isHost && <button className="bg-red-600 text-xs px-2 py-1 rounded font-bold">Follow</button>}
         </div>
       </div>
 
       {/* Right Sidebar */}
       <div className="w-full md:w-[350px] bg-white text-gray-800 flex flex-col h-[50%] md:h-full shrink-0 border-l border-gray-200 absolute bottom-0 md:relative rounded-t-2xl md:rounded-none shadow-2xl z-20">
         
+        {/* Host Controls Toolbar */}
+        {isHost && (
+            <div className="p-2 bg-gray-100 border-b border-gray-200 flex justify-between items-center shrink-0">
+                <div className="flex gap-2">
+                    <button onClick={() => setMicEnabled(!micEnabled)} className={`p-2 rounded hover:bg-white ${!micEnabled ? 'text-red-600 bg-red-50' : ''}`} title="Mic">
+                        {micEnabled ? <Mic size={18}/> : <MicOff size={18}/>}
+                    </button>
+                    <button onClick={() => setCameraEnabled(!cameraEnabled)} className={`p-2 rounded hover:bg-white ${!cameraEnabled ? 'text-red-600 bg-red-50' : ''}`} title="Camera">
+                        {cameraEnabled ? <Camera size={18}/> : <CameraOff size={18}/>}
+                    </button>
+                </div>
+                <div className="text-xs font-bold text-gray-500 uppercase">
+                    Bảng điều khiển Host
+                </div>
+            </div>
+        )}
+
         {/* Featured Product / Auction Dashboard */}
-        {featuredProduct && (
+        {featuredProduct ? (
             <div className="bg-gradient-to-b from-gray-50 to-white border-b border-gray-200 shrink-0">
                  {/* Product Header */}
                 <div className="p-3 flex gap-3 items-center relative overflow-hidden">
@@ -204,7 +249,8 @@ const LiveStreamViewer: React.FC<LiveStreamViewerProps> = ({ stream, products, o
                             <p className="text-red-600 font-bold mt-1">${featuredProduct.price}</p>
                         )}
                     </div>
-                    {featuredProduct.type === ItemType.FIXED_PRICE && (
+                    {/* Action Button: Buy (Viewer) or Unpin (Host - Mock) */}
+                    {featuredProduct.type === ItemType.FIXED_PRICE && !isHost && (
                         <button 
                             onClick={() => handleOpenCheckout(featuredProduct)}
                             className="bg-[#ffd814] text-black p-2 rounded-lg hover:bg-[#f7ca00]"
@@ -217,22 +263,25 @@ const LiveStreamViewer: React.FC<LiveStreamViewerProps> = ({ stream, products, o
                 {/* Auction Control Panel */}
                 {featuredProduct.type === ItemType.AUCTION && (
                     <div className="px-3 pb-3">
-                        <div className="flex gap-2 mb-2">
-                             {[10, 20, 50].map(inc => (
-                                 <button 
-                                    key={inc}
-                                    onClick={() => handleQuickBid(inc)}
-                                    className="flex-1 bg-white border border-[#febd69] text-black hover:bg-[#febd69] font-bold text-xs py-2 rounded-lg transition-colors shadow-sm flex flex-col items-center"
-                                 >
-                                    <span>+${inc}</span>
-                                 </button>
-                             ))}
-                        </div>
+                        {/* Only viewers can bid */}
+                        {!isHost && (
+                            <div className="flex gap-2 mb-2">
+                                {[10, 20, 50].map(inc => (
+                                    <button 
+                                        key={inc}
+                                        onClick={() => handleQuickBid(inc)}
+                                        className="flex-1 bg-white border border-[#febd69] text-black hover:bg-[#febd69] font-bold text-xs py-2 rounded-lg transition-colors shadow-sm flex flex-col items-center"
+                                    >
+                                        <span>+${inc}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                         
                         {/* Real-time Bid History List */}
                         <div className="bg-gray-100 rounded-lg p-2 h-24 overflow-y-auto no-scrollbar relative" ref={historyRef}>
                             <div className="text-[10px] font-bold text-gray-400 mb-1 sticky top-0 bg-gray-100 flex justify-between">
-                                <span>DIỄN BIẾN ({featuredProduct.bidCount})</span>
+                                <span>DIỄN BIẾN ({featuredProduct.bidCount || 0})</span>
                                 <span><TrendingUp size={10}/></span>
                             </div>
                             <div className="space-y-1">
@@ -245,10 +294,19 @@ const LiveStreamViewer: React.FC<LiveStreamViewerProps> = ({ stream, products, o
                                         <span>${bid.amount.toLocaleString()}</span>
                                     </div>
                                 ))}
+                                {(!featuredProduct.bidHistory || featuredProduct.bidHistory.length === 0) && (
+                                    <p className="text-center text-gray-400 text-[10px] py-2">Chưa có lượt đấu giá nào.</p>
+                                )}
                             </div>
                         </div>
                     </div>
                 )}
+            </div>
+        ) : (
+            // Empty State if no product pinned
+            <div className="p-4 bg-gray-50 border-b border-gray-200 text-center text-gray-400 shrink-0">
+                <ShoppingBag size={24} className="mx-auto mb-1 opacity-50"/>
+                <p className="text-xs">Chưa có sản phẩm nào được ghim</p>
             </div>
         )}
 
@@ -256,7 +314,7 @@ const LiveStreamViewer: React.FC<LiveStreamViewerProps> = ({ stream, products, o
         <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3 bg-white relative">
              {messages.map((msg, idx) => (
                  <div key={idx} className="text-sm animate-in slide-in-from-bottom-2 fade-in">
-                     <span className="font-bold text-gray-500 mr-2">{msg.user}:</span>
+                     <span className={`font-bold mr-2 ${msg.user.includes('Host') ? 'text-red-600' : 'text-gray-500'}`}>{msg.user}:</span>
                      <span className="text-gray-800">{msg.text}</span>
                  </div>
              ))}
@@ -274,7 +332,7 @@ const LiveStreamViewer: React.FC<LiveStreamViewerProps> = ({ stream, products, o
                             </button>
                         )}
                     </div>
-                    {/* ... (Existing checkout logic) ... */}
+                    
                     {orderSuccess ? (
                         <div className="flex flex-col items-center justify-center py-6">
                             <CheckCircle2 size={40} className="text-green-600 mb-2" />
@@ -296,9 +354,6 @@ const LiveStreamViewer: React.FC<LiveStreamViewerProps> = ({ stream, products, o
         <div className="p-3 border-t border-gray-100 flex items-center gap-2 bg-white pb-6 md:pb-3 shrink-0">
             <div className="bg-gray-100 p-2 rounded-full cursor-pointer hover:bg-gray-200">
                 <Heart size={20} className="text-red-500" />
-            </div>
-            <div className="bg-gray-100 p-2 rounded-full cursor-pointer hover:bg-gray-200">
-                <Share2 size={20} className="text-gray-600" />
             </div>
             <div className="flex-1 bg-gray-100 rounded-full flex items-center px-3">
                 <input 
