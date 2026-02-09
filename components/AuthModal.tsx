@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { X, Mail, Lock, User, ArrowRight, Github } from 'lucide-react';
+import { X, Mail, Lock, User, ArrowRight, Github, Smartphone, Facebook, Chrome, MessageSquare } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 interface AuthModalProps {
@@ -9,19 +9,27 @@ interface AuthModalProps {
 }
 
 const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
-  const { login, register } = useAuth();
-  const [isLoginView, setIsLoginView] = useState(true);
+  const { login, register, loginWithPhone, loginWithSocial } = useAuth();
+  
+  // Views: 'LOGIN' | 'REGISTER'
+  const [view, setView] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
+  // Methods: 'EMAIL' | 'PHONE'
+  const [method, setMethod] = useState<'EMAIL' | 'PHONE'>('EMAIL');
+  
   const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState({ name: '', email: '', password: '' });
+  const [formData, setFormData] = useState({ name: '', email: '', password: '', phone: '', otp: '' });
+  
+  // OTP State
+  const [otpSent, setOtpSent] = useState(false);
 
   if (!isOpen) return null;
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
     try {
-        if (isLoginView) {
+        if (view === 'LOGIN') {
             await login(formData.email, formData.password);
         } else {
             await register(formData.name, formData.email, formData.password);
@@ -32,6 +40,42 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     } finally {
         setIsLoading(false);
     }
+  };
+
+  const handlePhoneSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      setIsLoading(true);
+
+      if (!otpSent) {
+          // Simulate sending OTP
+          setTimeout(() => {
+              setOtpSent(true);
+              setIsLoading(false);
+              alert(`Mã OTP giả lập của bạn là: 123456`);
+          }, 1000);
+      } else {
+          // Verify OTP
+          try {
+            await loginWithPhone(formData.phone, formData.otp);
+            onClose();
+          } catch(e) {
+              console.error(e);
+          } finally {
+            setIsLoading(false);
+          }
+      }
+  };
+
+  const handleSocialLogin = async (provider: 'google' | 'facebook' | 'github') => {
+      setIsLoading(true);
+      try {
+          await loginWithSocial(provider);
+          onClose();
+      } catch (e) {
+          console.error(e);
+      } finally {
+          setIsLoading(false);
+      }
   };
 
   return (
@@ -47,81 +91,166 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         </div>
 
         <div className="p-8">
+            {/* Method Tabs */}
+            <div className="flex bg-gray-100 p-1 rounded-xl mb-6">
+                <button 
+                    onClick={() => { setMethod('EMAIL'); setOtpSent(false); }}
+                    className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${method === 'EMAIL' ? 'bg-white shadow text-[#131921]' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                    <Mail size={16}/> Email
+                </button>
+                <button 
+                    onClick={() => { setMethod('PHONE'); setOtpSent(false); }}
+                    className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${method === 'PHONE' ? 'bg-white shadow text-[#131921]' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                    <Smartphone size={16}/> Số điện thoại
+                </button>
+            </div>
+
             <h3 className="text-xl font-bold text-gray-900 mb-6 text-center">
-                {isLoginView ? 'Đăng nhập tài khoản' : 'Đăng ký thành viên mới'}
+                {view === 'LOGIN' ? 'Đăng nhập' : 'Đăng ký tài khoản'}
             </h3>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-                {!isLoginView && (
+            {method === 'EMAIL' ? (
+                /* EMAIL FORM */
+                <form onSubmit={handleEmailSubmit} className="space-y-4">
+                    {view === 'REGISTER' && (
+                        <div className="relative">
+                            <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                            <input 
+                                type="text" 
+                                placeholder="Họ và tên"
+                                className="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:border-[#febd69] outline-none"
+                                value={formData.name}
+                                onChange={e => setFormData({...formData, name: e.target.value})}
+                                required
+                            />
+                        </div>
+                    )}
                     <div className="relative">
-                        <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                         <input 
-                            type="text" 
-                            placeholder="Họ và tên"
+                            type="email" 
+                            placeholder="Email"
                             className="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:border-[#febd69] outline-none"
-                            value={formData.name}
-                            onChange={e => setFormData({...formData, name: e.target.value})}
+                            value={formData.email}
+                            onChange={e => setFormData({...formData, email: e.target.value})}
                             required
                         />
                     </div>
-                )}
-                <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                    <input 
-                        type="email" 
-                        placeholder="Email"
-                        className="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:border-[#febd69] outline-none"
-                        value={formData.email}
-                        onChange={e => setFormData({...formData, email: e.target.value})}
-                        required
-                    />
-                </div>
-                <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                    <input 
-                        type="password" 
-                        placeholder="Mật khẩu"
-                        className="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:border-[#febd69] outline-none"
-                        value={formData.password}
-                        onChange={e => setFormData({...formData, password: e.target.value})}
-                        required
-                    />
-                </div>
+                    <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                        <input 
+                            type="password" 
+                            placeholder="Mật khẩu"
+                            className="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:border-[#febd69] outline-none"
+                            value={formData.password}
+                            onChange={e => setFormData({...formData, password: e.target.value})}
+                            required
+                        />
+                    </div>
 
-                <button 
-                    disabled={isLoading}
-                    className="w-full bg-[#febd69] hover:bg-[#f3a847] text-black font-bold py-3 rounded-lg shadow-md transition-all flex items-center justify-center gap-2"
-                >
-                    {isLoading ? 'Đang xử lý...' : (isLoginView ? 'Đăng nhập' : 'Tạo tài khoản')}
-                    {!isLoading && <ArrowRight size={18} />}
-                </button>
-            </form>
+                    <button 
+                        disabled={isLoading}
+                        className="w-full bg-[#febd69] hover:bg-[#f3a847] text-black font-bold py-3 rounded-lg shadow-md transition-all flex items-center justify-center gap-2"
+                    >
+                        {isLoading ? 'Đang xử lý...' : (view === 'LOGIN' ? 'Đăng nhập' : 'Tạo tài khoản')}
+                        {!isLoading && <ArrowRight size={18} />}
+                    </button>
+                </form>
+            ) : (
+                /* PHONE FORM */
+                <form onSubmit={handlePhoneSubmit} className="space-y-4">
+                    {!otpSent ? (
+                        <div className="relative animate-in slide-in-from-right">
+                            <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                            <input 
+                                type="tel" 
+                                placeholder="Số điện thoại (VD: 0901234567)"
+                                className="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:border-[#febd69] outline-none"
+                                value={formData.phone}
+                                onChange={e => setFormData({...formData, phone: e.target.value})}
+                                required
+                                pattern="[0-9]{10,11}"
+                            />
+                        </div>
+                    ) : (
+                        <div className="relative animate-in slide-in-from-right">
+                             <MessageSquare className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                             <input 
+                                type="text" 
+                                placeholder="Nhập mã OTP (123456)"
+                                className="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:border-[#febd69] outline-none tracking-widest font-bold text-center"
+                                value={formData.otp}
+                                onChange={e => setFormData({...formData, otp: e.target.value})}
+                                required
+                                maxLength={6}
+                            />
+                            <p className="text-xs text-center text-gray-500 mt-2">Mã OTP đã được gửi đến {formData.phone}</p>
+                        </div>
+                    )}
+
+                    <button 
+                        disabled={isLoading}
+                        className="w-full bg-[#febd69] hover:bg-[#f3a847] text-black font-bold py-3 rounded-lg shadow-md transition-all flex items-center justify-center gap-2"
+                    >
+                        {isLoading ? 'Đang xử lý...' : (!otpSent ? 'Gửi mã OTP' : 'Xác nhận & Đăng nhập')}
+                        {!isLoading && !otpSent && <ArrowRight size={18} />}
+                    </button>
+                    
+                    {otpSent && (
+                        <button 
+                            type="button"
+                            onClick={() => setOtpSent(false)}
+                            className="w-full text-xs text-gray-500 hover:text-blue-600 underline"
+                        >
+                            Đổi số điện thoại
+                        </button>
+                    )}
+                </form>
+            )}
             
+            {/* Social Login */}
             <div className="mt-6 text-center">
                 <p className="text-sm text-gray-500 mb-4">Hoặc tiếp tục với</p>
                 <div className="flex gap-3 justify-center">
-                    <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-bold">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" className="w-4 h-4" />
-                        Google
+                    <button 
+                        onClick={() => handleSocialLogin('google')}
+                        className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-bold transition-colors"
+                        title="Đăng nhập Google"
+                    >
+                         <Chrome size={18} className="text-red-500"/>
                     </button>
-                    <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-bold">
-                        <Github size={16} />
-                        GitHub
+                    <button 
+                        onClick={() => handleSocialLogin('facebook')}
+                        className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-blue-50 text-sm font-bold transition-colors text-blue-700"
+                        title="Đăng nhập Facebook"
+                    >
+                        <Facebook size={18} />
+                    </button>
+                    <button 
+                        onClick={() => handleSocialLogin('github')}
+                        className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-800 hover:text-white text-sm font-bold transition-colors"
+                        title="Đăng nhập GitHub"
+                    >
+                        <Github size={18} />
                     </button>
                 </div>
             </div>
 
-            <div className="mt-8 text-center text-sm">
-                <span className="text-gray-500">
-                    {isLoginView ? 'Chưa có tài khoản? ' : 'Đã có tài khoản? '}
-                </span>
-                <button 
-                    onClick={() => setIsLoginView(!isLoginView)}
-                    className="text-blue-600 font-bold hover:underline"
-                >
-                    {isLoginView ? 'Đăng ký ngay' : 'Đăng nhập'}
-                </button>
-            </div>
+            {method === 'EMAIL' && (
+                <div className="mt-8 text-center text-sm">
+                    <span className="text-gray-500">
+                        {view === 'LOGIN' ? 'Chưa có tài khoản? ' : 'Đã có tài khoản? '}
+                    </span>
+                    <button 
+                        onClick={() => setView(view === 'LOGIN' ? 'REGISTER' : 'LOGIN')}
+                        className="text-blue-600 font-bold hover:underline"
+                    >
+                        {view === 'LOGIN' ? 'Đăng ký ngay' : 'Đăng nhập'}
+                    </button>
+                </div>
+            )}
         </div>
       </div>
     </div>

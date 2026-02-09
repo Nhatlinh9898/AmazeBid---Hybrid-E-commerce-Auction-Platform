@@ -6,6 +6,8 @@ interface AuthContextType {
   user: User | null;
   login: (email: string, pass: string) => Promise<boolean>;
   register: (name: string, email: string, pass: string) => Promise<boolean>;
+  loginWithPhone: (phone: string, otp: string) => Promise<boolean>;
+  loginWithSocial: (provider: 'google' | 'facebook' | 'github') => Promise<boolean>;
   logout: () => void;
   updateProfile: (updatedData: Partial<User>) => void;
 }
@@ -29,7 +31,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setTimeout(() => {
         // Mock Login Success
         const mockUser: User = {
-          id: 'user_123',
+          id: 'user_email_123',
           fullName: 'Nguyễn Văn A',
           email: email,
           avatar: `https://ui-avatars.com/api/?name=Nguyen+Van+A&background=random`,
@@ -50,6 +52,58 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         resolve(true);
       }, 800);
     });
+  };
+
+  const loginWithPhone = async (phone: string, otp: string): Promise<boolean> => {
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            const mockUser: User = {
+                id: `user_phone_${phone}`,
+                fullName: `Người dùng ${phone.slice(-4)}`,
+                email: `${phone}@phone.user`,
+                phone: phone,
+                avatar: `https://ui-avatars.com/api/?name=${phone.slice(-3)}&background=random`,
+                joinDate: new Date().toISOString(),
+                balance: 0,
+                paymentMethods: [],
+                socialAccounts: [],
+                referralCode: `AMAZE-P-${Math.floor(Math.random() * 1000)}`,
+                friendCount: 0
+            };
+            setUser(mockUser);
+            localStorage.setItem('amaze_user', JSON.stringify(mockUser));
+            resolve(true);
+        }, 1000);
+    });
+  };
+
+  const loginWithSocial = async (provider: 'google' | 'facebook' | 'github'): Promise<boolean> => {
+      return new Promise((resolve) => {
+          setTimeout(() => {
+              let name = 'Social User';
+              if (provider === 'google') name = 'Google User';
+              if (provider === 'facebook') name = 'Facebook User';
+              if (provider === 'github') name = 'Dev GitHub';
+
+              const mockUser: User = {
+                  id: `user_${provider}_${Date.now()}`,
+                  fullName: name,
+                  email: `${provider}_user@example.com`,
+                  avatar: `https://ui-avatars.com/api/?name=${name}&background=random`,
+                  joinDate: new Date().toISOString(),
+                  balance: 50, // Bonus balance for social login
+                  paymentMethods: [],
+                  socialAccounts: [
+                      { provider: provider as any, connected: true, username: `${name.toLowerCase().replace(' ', '')}` }
+                  ],
+                  referralCode: `AMAZE-S-${Math.floor(Math.random() * 1000)}`,
+                  friendCount: 5
+              };
+              setUser(mockUser);
+              localStorage.setItem('amaze_user', JSON.stringify(mockUser));
+              resolve(true);
+          }, 1200);
+      });
   };
 
   const register = async (name: string, email: string, pass: string): Promise<boolean> => {
@@ -91,7 +145,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, updateProfile }}>
+    <AuthContext.Provider value={{ user, login, register, loginWithPhone, loginWithSocial, logout, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );
