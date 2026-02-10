@@ -1,9 +1,9 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { X, User, Shirt, Image as ImageIcon, Video, Mic, Music, Sparkles, MessageSquare, Monitor, Zap, Bot, Radio, Sliders } from 'lucide-react';
+import { X, User, Shirt, Image as ImageIcon, Video, Mic, Music, Sparkles, MessageSquare, Monitor, Zap, Bot, Radio, Sliders, Palette, Languages, Speaker, Scissors } from 'lucide-react';
 import { MOCK_AVATARS, MOCK_OUTFITS, MOCK_ENVIRONMENTS } from '../data';
 import { GoogleGenAI } from "@google/genai";
-import { Product } from '../types';
+import { Product, AvatarCustomization } from '../types';
 
 interface VirtualAvatarStudioProps {
   isOpen: boolean;
@@ -14,13 +14,23 @@ interface VirtualAvatarStudioProps {
 type AvatarState = 'IDLE' | 'TALKING' | 'SINGING';
 
 const VirtualAvatarStudio: React.FC<VirtualAvatarStudioProps> = ({ isOpen, onClose, products }) => {
-  const [activeTab, setActiveTab] = useState<'SETUP' | 'STUDIO' | 'LIVE'>('SETUP');
+  const [activeTab, setActiveTab] = useState<'SETUP' | 'CUSTOMIZE' | 'STUDIO' | 'LIVE'>('SETUP');
   
   // Avatar Configuration State
   const [selectedAvatar, setSelectedAvatar] = useState(MOCK_AVATARS[0]);
   const [selectedOutfit, setSelectedOutfit] = useState(MOCK_OUTFITS[0]);
   const [selectedEnv, setSelectedEnv] = useState(MOCK_ENVIRONMENTS[0]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(products[0] || null);
+
+  // New: Advanced Customization State
+  const [customization, setCustomization] = useState<AvatarCustomization>({
+      heightScale: 1.0,
+      skinToneHash: '#ffffff', // Default neutral
+      hairStyle: 'LONG',
+      language: 'vi-VN',
+      voiceSpeed: 1.1,
+      voicePitch: 1.0
+  });
 
   // Live State
   const [isLive, setIsLive] = useState(false);
@@ -60,6 +70,14 @@ const VirtualAvatarStudio: React.FC<VirtualAvatarStudioProps> = ({ isOpen, onClo
       }
   }, [avatarState]);
 
+  // Reset customization when changing base avatar
+  useEffect(() => {
+      setCustomization(prev => ({
+          ...prev,
+          voicePitch: selectedAvatar.gender === 'FEMALE' ? 1.2 : 0.9
+      }));
+  }, [selectedAvatar]);
+
   // Gemini AI for Chat & Lyrics
   const generateResponse = async (userMessage: string) => {
     setAvatarState('TALKING');
@@ -68,6 +86,7 @@ const VirtualAvatarStudio: React.FC<VirtualAvatarStudioProps> = ({ isOpen, onClo
     try {
         const prompt = `Bạn là nhân vật ảo tên là ${selectedAvatar.name}. 
         Phong cách của bạn là: ${selectedAvatar.role}. Giọng điệu: ${selectedAvatar.voiceTone}.
+        Ngôn ngữ trả lời: ${customization.language === 'vi-VN' ? 'Tiếng Việt' : customization.language === 'en-US' ? 'English' : 'Japanese'}.
         Bạn đang livestream bán sản phẩm: ${selectedProduct?.title}.
         
         Khách hàng hỏi: "${userMessage}"
@@ -82,11 +101,11 @@ const VirtualAvatarStudio: React.FC<VirtualAvatarStudioProps> = ({ isOpen, onClo
         const reply = response.text || "Cảm ơn bạn đã quan tâm!";
         setChatHistory(prev => [...prev, { user: selectedAvatar.name, text: reply }]);
         
-        // Simple speech synthesis
+        // Advanced speech synthesis with customization
         const utterance = new SpeechSynthesisUtterance(reply);
-        utterance.lang = 'vi-VN';
-        utterance.rate = 1.1;
-        utterance.pitch = selectedAvatar.gender === 'FEMALE' ? 1.2 : 0.9;
+        utterance.lang = customization.language;
+        utterance.rate = customization.voiceSpeed;
+        utterance.pitch = customization.voicePitch;
         
         window.speechSynthesis.speak(utterance);
         
@@ -105,7 +124,7 @@ const VirtualAvatarStudio: React.FC<VirtualAvatarStudioProps> = ({ isOpen, onClo
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       try {
           const prompt = `Viết một đoạn lời bài hát ngắn (4 dòng) quảng cáo cho sản phẩm: "${selectedProduct?.title}". 
-          Phong cách nhạc: Pop, vui tươi. Chỉ trả về lời bài hát.`;
+          Phong cách nhạc: Pop, vui tươi. Ngôn ngữ: ${customization.language}. Chỉ trả về lời bài hát.`;
           
           const response = await ai.models.generateContent({
               model: 'gemini-3-flash-preview',
@@ -143,7 +162,7 @@ const VirtualAvatarStudio: React.FC<VirtualAvatarStudioProps> = ({ isOpen, onClo
           }, 4000);
           return () => clearInterval(interval);
       }
-  }, [isLive, selectedProduct, avatarState]);
+  }, [isLive, selectedProduct, avatarState, customization]); // Added customization dependency
 
   if (!isOpen) return null;
 
@@ -164,15 +183,18 @@ const VirtualAvatarStudio: React.FC<VirtualAvatarStudioProps> = ({ isOpen, onClo
               </div>
           </div>
           
-          <div className="flex bg-gray-800 p-1 rounded-lg">
-              <button onClick={() => setActiveTab('SETUP')} className={`px-4 py-2 rounded-md text-sm font-bold transition-all ${activeTab === 'SETUP' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:text-white'}`}>
-                  1. Nhân vật
+          <div className="flex bg-gray-800 p-1 rounded-lg overflow-x-auto">
+              <button onClick={() => setActiveTab('SETUP')} className={`px-4 py-2 rounded-md text-sm font-bold whitespace-nowrap transition-all ${activeTab === 'SETUP' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:text-white'}`}>
+                  1. Model Gốc
               </button>
-              <button onClick={() => setActiveTab('STUDIO')} className={`px-4 py-2 rounded-md text-sm font-bold transition-all ${activeTab === 'STUDIO' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:text-white'}`}>
-                  2. Sân khấu
+              <button onClick={() => setActiveTab('CUSTOMIZE')} className={`px-4 py-2 rounded-md text-sm font-bold whitespace-nowrap transition-all ${activeTab === 'CUSTOMIZE' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:text-white'}`}>
+                  2. Tùy chỉnh (Mới)
               </button>
-              <button onClick={() => setActiveTab('LIVE')} className={`px-4 py-2 rounded-md text-sm font-bold transition-all ${activeTab === 'LIVE' ? 'bg-red-600 text-white animate-pulse' : 'text-gray-400 hover:text-white'}`}>
-                  3. Phát sóng
+              <button onClick={() => setActiveTab('STUDIO')} className={`px-4 py-2 rounded-md text-sm font-bold whitespace-nowrap transition-all ${activeTab === 'STUDIO' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:text-white'}`}>
+                  3. Trang phục
+              </button>
+              <button onClick={() => setActiveTab('LIVE')} className={`px-4 py-2 rounded-md text-sm font-bold whitespace-nowrap transition-all ${activeTab === 'LIVE' ? 'bg-red-600 text-white animate-pulse' : 'text-gray-400 hover:text-white'}`}>
+                  4. Phát sóng
               </button>
           </div>
 
@@ -180,10 +202,10 @@ const VirtualAvatarStudio: React.FC<VirtualAvatarStudioProps> = ({ isOpen, onClo
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden flex-col md:flex-row">
           
           {/* LEFT SIDEBAR: Controls */}
-          <div className="w-80 bg-[#1e293b] border-r border-gray-700 p-4 overflow-y-auto custom-scrollbar">
+          <div className="w-full md:w-96 bg-[#1e293b] border-r border-gray-700 p-4 overflow-y-auto custom-scrollbar shrink-0">
               {activeTab === 'SETUP' && (
                   <div className="space-y-6 animate-in slide-in-from-left">
                       <div>
@@ -208,12 +230,120 @@ const VirtualAvatarStudio: React.FC<VirtualAvatarStudioProps> = ({ isOpen, onClo
                           <label className="block text-xs font-bold text-gray-400 uppercase mb-3">Thông số AI</label>
                           <div className="p-3 bg-gray-800 rounded-lg border border-gray-700 space-y-2">
                               <div className="flex justify-between text-xs">
-                                  <span className="text-gray-400">Giọng:</span>
+                                  <span className="text-gray-400">Giọng gốc:</span>
                                   <span className="text-white font-bold">{selectedAvatar.voiceTone}</span>
                               </div>
                               <div className="flex justify-between text-xs">
-                                  <span className="text-gray-400">Model:</span>
-                                  <span className="text-purple-400 font-bold">Gemini 1.5 Flash</span>
+                                  <span className="text-gray-400">Giới tính:</span>
+                                  <span className="text-purple-400 font-bold">{selectedAvatar.gender}</span>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+              )}
+
+              {activeTab === 'CUSTOMIZE' && (
+                  <div className="space-y-6 animate-in slide-in-from-left">
+                      {/* 1. Body & Skin */}
+                      <div className="bg-gray-800/50 p-4 rounded-xl border border-gray-700">
+                          <h3 className="text-sm font-bold text-purple-400 flex items-center gap-2 mb-4">
+                              <Palette size={16}/> Ngoại hình & Vóc dáng
+                          </h3>
+                          
+                          <div className="space-y-4">
+                              <div>
+                                  <div className="flex justify-between text-xs mb-1">
+                                      <span className="text-gray-400">Chiều cao</span>
+                                      <span>{Math.round(customization.heightScale * 170)} cm</span>
+                                  </div>
+                                  <input 
+                                      type="range" min="0.9" max="1.1" step="0.01"
+                                      value={customization.heightScale}
+                                      onChange={(e) => setCustomization({...customization, heightScale: parseFloat(e.target.value)})}
+                                      className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                                  />
+                              </div>
+
+                              <div>
+                                  <div className="flex justify-between text-xs mb-2">
+                                      <span className="text-gray-400">Tông màu da (Overlay)</span>
+                                  </div>
+                                  <div className="flex gap-2">
+                                      {['#ffffff', '#fcece0', '#eac086', '#a16e4b', '#593b2b'].map(color => (
+                                          <button 
+                                            key={color}
+                                            onClick={() => setCustomization({...customization, skinToneHash: color})}
+                                            className={`w-8 h-8 rounded-full border-2 transition-all ${customization.skinToneHash === color ? 'border-purple-500 scale-110' : 'border-gray-500'}`}
+                                            style={{ backgroundColor: color }}
+                                          />
+                                      ))}
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+
+                      {/* 2. Hair */}
+                      <div className="bg-gray-800/50 p-4 rounded-xl border border-gray-700">
+                           <h3 className="text-sm font-bold text-purple-400 flex items-center gap-2 mb-4">
+                              <Scissors size={16}/> Kiểu tóc (Mockup)
+                          </h3>
+                          <div className="grid grid-cols-4 gap-2">
+                              {['LONG', 'SHORT', 'BOB', 'PONYTAIL'].map(style => (
+                                  <button
+                                    key={style}
+                                    onClick={() => setCustomization({...customization, hairStyle: style as any})}
+                                    className={`p-2 rounded border text-[10px] font-bold transition-all ${customization.hairStyle === style ? 'bg-purple-600 border-purple-400 text-white' : 'bg-gray-700 border-gray-600 text-gray-400'}`}
+                                  >
+                                      {style}
+                                  </button>
+                              ))}
+                          </div>
+                      </div>
+
+                      {/* 3. Voice & Language */}
+                      <div className="bg-gray-800/50 p-4 rounded-xl border border-gray-700">
+                          <h3 className="text-sm font-bold text-purple-400 flex items-center gap-2 mb-4">
+                              <Speaker size={16}/> Giọng nói & Ngôn ngữ
+                          </h3>
+                          
+                          <div className="space-y-4">
+                               <div>
+                                  <label className="block text-xs text-gray-400 mb-2 flex items-center gap-1"><Languages size={12}/> Ngôn ngữ chính</label>
+                                  <select 
+                                    value={customization.language}
+                                    onChange={(e) => setCustomization({...customization, language: e.target.value as any})}
+                                    className="w-full bg-gray-900 border border-gray-600 rounded p-2 text-xs outline-none"
+                                  >
+                                      <option value="vi-VN">Tiếng Việt</option>
+                                      <option value="en-US">English (US)</option>
+                                      <option value="ja-JP">Japanese</option>
+                                  </select>
+                               </div>
+
+                               <div>
+                                  <div className="flex justify-between text-xs mb-1">
+                                      <span className="text-gray-400">Cao độ (Pitch)</span>
+                                      <span>{customization.voicePitch.toFixed(1)}x</span>
+                                  </div>
+                                  <input 
+                                      type="range" min="0.5" max="2.0" step="0.1"
+                                      value={customization.voicePitch}
+                                      onChange={(e) => setCustomization({...customization, voicePitch: parseFloat(e.target.value)})}
+                                      className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                                  />
+                              </div>
+
+                              <div>
+                                  <div className="flex justify-between text-xs mb-1">
+                                      <span className="text-gray-400">Tốc độ nói</span>
+                                      <span>{customization.voiceSpeed.toFixed(1)}x</span>
+                                  </div>
+                                  <input 
+                                      type="range" min="0.5" max="2.0" step="0.1"
+                                      value={customization.voiceSpeed}
+                                      onChange={(e) => setCustomization({...customization, voiceSpeed: parseFloat(e.target.value)})}
+                                      className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                                  />
                               </div>
                           </div>
                       </div>
@@ -356,8 +486,15 @@ const VirtualAvatarStudio: React.FC<VirtualAvatarStudioProps> = ({ isOpen, onClo
                 style={{ backgroundColor: selectedEnv.lightingColor, opacity: 0.3 }}
               />
               
-              {/* Avatar Layer - Using State Switching */}
-              <div className="relative z-10 h-full max-h-[800px] aspect-[9/16] flex items-end justify-center">
+              {/* Avatar Layer - Using Customization & State */}
+              <div 
+                className="relative z-10 h-full max-h-[800px] aspect-[9/16] flex items-end justify-center transition-transform duration-300"
+                style={{ 
+                    // Simulate Height scaling
+                    transform: `scale(${customization.heightScale})`,
+                    transformOrigin: 'bottom center'
+                }}
+              >
                   <div className="relative w-full h-full">
                         {/* 
                             Concept: To make it look "real", we treat the video as a "cutout" or apply filters 
@@ -369,11 +506,18 @@ const VirtualAvatarStudio: React.FC<VirtualAvatarStudioProps> = ({ isOpen, onClo
                             autoPlay loop muted 
                             className="h-full w-full object-cover transition-opacity duration-300"
                             style={{ 
-                                // Simulating Green Screen removal or blending if videos were standard
-                                maskImage: 'linear-gradient(to bottom, black 80%, transparent 100%)',
-                                filter: `drop-shadow(0 0 10px ${selectedEnv.lightingColor}50)`
+                                // Simulate Skin Tone adjustment using sepia and hue-rotate filters (visual hack for demo)
+                                // In production, this would be a real 3D texture change.
+                                filter: customization.skinToneHash !== '#ffffff' 
+                                    ? `sepia(0.3) hue-rotate(-10deg) drop-shadow(0 0 10px ${selectedEnv.lightingColor}50)` 
+                                    : `drop-shadow(0 0 10px ${selectedEnv.lightingColor}50)`
                             }}
                         />
+                        
+                        {/* Simulate Skin Tone Overlay (Visual Hack) */}
+                        {customization.skinToneHash !== '#ffffff' && (
+                             <div className="absolute inset-0 bg-cover mix-blend-color pointer-events-none opacity-20" style={{ backgroundColor: customization.skinToneHash }}></div>
+                        )}
                   </div>
                   
                   {/* Overlay Outfit (Mockup visual) */}

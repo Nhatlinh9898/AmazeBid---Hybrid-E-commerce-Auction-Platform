@@ -66,6 +66,16 @@ export interface Transaction {
 }
 
 // --- Virtual Avatar Types ---
+
+export interface AvatarCustomization {
+  heightScale: number; // 0.9 to 1.1
+  skinToneHash: string; // Hex color for overlay tint
+  hairStyle: 'LONG' | 'SHORT' | 'BOB' | 'PONYTAIL';
+  language: 'vi-VN' | 'en-US' | 'ja-JP';
+  voiceSpeed: number; // 0.5 to 2
+  voicePitch: number; // 0.5 to 2
+}
+
 export interface AvatarConfig {
   id: string;
   name: string;
