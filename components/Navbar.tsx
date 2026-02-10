@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Search, ShoppingCart, User as UserIcon, MapPin, Gavel, LayoutGrid, PlusCircle, Package, Video, LogIn, ChevronDown, Sparkles, Zap } from 'lucide-react';
+import { Search, ShoppingCart, User as UserIcon, MapPin, Gavel, LayoutGrid, PlusCircle, Package, Video, LogIn, ChevronDown, Sparkles, Zap, BarChart3, Shield } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 interface NavbarProps {
@@ -15,12 +15,14 @@ interface NavbarProps {
   onOpenProfile: () => void;
   onOpenCustomerService: () => void;
   onOpenContentStudio: () => void;
-  onOpenSuperDeals: () => void; // New Prop
+  onOpenSuperDeals: () => void;
+  onOpenSellerDashboard: () => void;
+  onOpenAdminDashboard: () => void; // New Prop
 }
 
 const Navbar: React.FC<NavbarProps> = ({ 
   cartCount, onSearch, openCart, openSellModal, openOrders, 
-  onOpenLiveStudio, onViewLiveStreams, onOpenAuth, onOpenProfile, onOpenCustomerService, onOpenContentStudio, onOpenSuperDeals
+  onOpenLiveStudio, onViewLiveStreams, onOpenAuth, onOpenProfile, onOpenCustomerService, onOpenContentStudio, onOpenSuperDeals, onOpenSellerDashboard, onOpenAdminDashboard
 }) => {
   const { user } = useAuth();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -140,6 +142,24 @@ const Navbar: React.FC<NavbarProps> = ({
           <LayoutGrid size={18} />
           <span>Tất cả</span>
         </div>
+        
+        {/* Admin Dashboard - Demo Access */}
+        <span 
+            onClick={onOpenAdminDashboard}
+            className="hover:border-white border border-transparent p-1 rounded cursor-pointer font-bold text-red-400 flex items-center gap-1"
+            title="Dành cho Quản trị viên"
+        >
+            <Shield size={14} /> Admin
+        </span>
+
+        {/* Seller Channel Button */}
+        <span 
+            onClick={user ? onOpenSellerDashboard : onOpenAuth}
+            className="hover:border-white border border-transparent p-1 rounded cursor-pointer font-bold text-white flex items-center gap-1"
+        >
+            <BarChart3 size={14} className="text-[#febd69]" /> Kênh Người Bán
+        </span>
+
         <span 
             onClick={onViewLiveStreams}
             className="hover:border-white border border-transparent p-1 rounded cursor-pointer font-bold text-[#febd69] flex items-center gap-1"

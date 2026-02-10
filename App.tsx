@@ -12,7 +12,9 @@ import AuthModal from './components/AuthModal';
 import UserProfile from './components/UserProfile'; 
 import CustomerServiceModal from './components/CustomerServiceModal'; 
 import ContentStudioModal from './components/ContentStudioModal'; 
-import SuperDealsModal from './components/SuperDealsModal'; // New Import
+import SuperDealsModal from './components/SuperDealsModal'; 
+import SellerDashboard from './components/SellerDashboard'; 
+import AdminDashboard from './components/AdminDashboard'; // New Import
 import { AuthProvider, useAuth } from './context/AuthContext'; 
 
 import { MOCK_PRODUCTS, MOCK_STREAMS } from './data';
@@ -40,7 +42,9 @@ const InnerApp: React.FC = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isCustomerServiceOpen, setIsCustomerServiceOpen] = useState(false);
   const [isContentStudioOpen, setIsContentStudioOpen] = useState(false);
-  const [isSuperDealsOpen, setIsSuperDealsOpen] = useState(false); // New State
+  const [isSuperDealsOpen, setIsSuperDealsOpen] = useState(false);
+  const [isSellerDashboardOpen, setIsSellerDashboardOpen] = useState(false);
+  const [isAdminDashboardOpen, setIsAdminDashboardOpen] = useState(false); // New State
 
   // Live Stream States
   const [activeStream, setActiveStream] = useState<LiveStream | null>(null);
@@ -237,6 +241,8 @@ const InnerApp: React.FC = () => {
         onOpenCustomerService={() => setIsCustomerServiceOpen(true)}
         onOpenContentStudio={() => setIsContentStudioOpen(true)}
         onOpenSuperDeals={() => setIsSuperDealsOpen(true)}
+        onOpenSellerDashboard={() => setIsSellerDashboardOpen(true)}
+        onOpenAdminDashboard={() => setIsAdminDashboardOpen(true)}
       />
 
       <main className="max-w-[1500px] mx-auto px-4 py-6">
@@ -507,6 +513,20 @@ const InnerApp: React.FC = () => {
         onClose={() => setIsSuperDealsOpen(false)}
         products={superDealsProducts}
         onAddToCart={handleAddToCart}
+      />
+
+      {/* Seller Dashboard (New) */}
+      <SellerDashboard 
+        isOpen={isSellerDashboardOpen}
+        onClose={() => setIsSellerDashboardOpen(false)}
+        products={products}
+        currentUserId={user?.id || 'currentUser'}
+      />
+
+      {/* Admin Dashboard (New) */}
+      <AdminDashboard 
+        isOpen={isAdminDashboardOpen}
+        onClose={() => setIsAdminDashboardOpen(false)}
       />
 
       {/* Order Dashboard */}

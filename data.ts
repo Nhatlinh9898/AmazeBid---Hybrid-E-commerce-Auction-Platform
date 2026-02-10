@@ -1,5 +1,5 @@
 
-import { Product, ItemType, OrderStatus, LiveStream } from './types';
+import { Product, ItemType, OrderStatus, LiveStream, User, Transaction } from './types';
 
 // Mock Affiliate Network (Kho hàng chung)
 export const AFFILIATE_NETWORK_ITEMS = [
@@ -261,4 +261,77 @@ export const MOCK_PRODUCTS: Product[] = [
     status: OrderStatus.AVAILABLE,
     sellerId: 'music_lover'
   }
+];
+
+// --- MOCK DATA FOR ADMIN DASHBOARD ---
+
+export const MOCK_ALL_USERS: User[] = [
+  {
+    id: 'u1',
+    fullName: 'Nguyễn Văn A',
+    email: 'vana@example.com',
+    avatar: 'https://ui-avatars.com/api/?name=Van+A&background=random',
+    joinDate: '2023-01-15T10:00:00Z',
+    balance: 150.00,
+    paymentMethods: [],
+    role: 'USER'
+  },
+  {
+    id: 'u2',
+    fullName: 'Trần Thị B',
+    email: 'thib@example.com',
+    avatar: 'https://ui-avatars.com/api/?name=Thi+B&background=random',
+    joinDate: '2023-03-20T09:30:00Z',
+    balance: 50.00,
+    paymentMethods: [],
+    role: 'USER'
+  },
+  {
+    id: 'u3',
+    fullName: 'Lê Hoàng C',
+    email: 'hoangc@example.com',
+    avatar: 'https://ui-avatars.com/api/?name=Hoang+C&background=random',
+    joinDate: '2023-06-10T14:00:00Z',
+    balance: 1200.00,
+    paymentMethods: [],
+    role: 'USER'
+  },
+  {
+    id: 'u4',
+    fullName: 'Phạm Minh D',
+    email: 'minhd@example.com',
+    avatar: 'https://ui-avatars.com/api/?name=Minh+D&background=random',
+    joinDate: '2023-11-05T08:15:00Z',
+    balance: 0.00,
+    paymentMethods: [],
+    role: 'USER'
+  },
+  {
+    id: 'admin_1',
+    fullName: 'Administrator',
+    email: 'admin@amazebid.com',
+    avatar: 'https://ui-avatars.com/api/?name=Admin&background=000&color=fff',
+    joinDate: '2022-12-01T00:00:00Z',
+    balance: 99999.00,
+    paymentMethods: [],
+    role: 'ADMIN'
+  }
+];
+
+// Helper to create dates relative to now
+const daysAgo = (days: number) => {
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  return d.toISOString();
+};
+
+export const MOCK_TRANSACTIONS: Transaction[] = [
+  { id: 't1', userId: 'u1', productId: '1', amount: 349.99, type: 'PURCHASE', timestamp: daysAgo(0), status: 'COMPLETED' }, // Today
+  { id: 't2', userId: 'u2', productId: '5', amount: 189.99, type: 'PURCHASE', timestamp: daysAgo(1), status: 'COMPLETED' }, // Yesterday
+  { id: 't3', userId: 'u1', productId: '0', amount: 120.00, type: 'PURCHASE', timestamp: daysAgo(4), status: 'COMPLETED' }, // This Week
+  { id: 't4', userId: 'u3', productId: '3', amount: 2499.00, type: 'PURCHASE', timestamp: daysAgo(15), status: 'COMPLETED' }, // This Month
+  { id: 't5', userId: 'u3', productId: '4', amount: 5000.00, type: 'PURCHASE', timestamp: daysAgo(45), status: 'COMPLETED' }, // This Quarter
+  { id: 't6', userId: 'u2', productId: '6', amount: 455.00, type: 'PURCHASE', timestamp: daysAgo(100), status: 'COMPLETED' }, // This Year
+  { id: 't7', userId: 'u4', productId: '5', amount: 189.99, type: 'PURCHASE', timestamp: daysAgo(200), status: 'COMPLETED' }, // This Year
+  { id: 't8', userId: 'u1', productId: '2', amount: 1500.00, type: 'PURCHASE', timestamp: daysAgo(400), status: 'COMPLETED' }, // Last Year
 ];

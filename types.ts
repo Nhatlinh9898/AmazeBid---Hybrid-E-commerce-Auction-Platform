@@ -51,6 +51,18 @@ export interface User {
   referralCode?: string;
   referredBy?: string;
   friendCount?: number;
+  role?: 'USER' | 'ADMIN'; // Added Role
+}
+
+// New Interface for Admin Reporting
+export interface Transaction {
+  id: string;
+  userId: string;
+  productId: string;
+  amount: number;
+  type: 'PURCHASE' | 'FEE' | 'DEPOSIT';
+  timestamp: string;
+  status: 'COMPLETED' | 'PENDING' | 'FAILED';
 }
 
 export interface Product {
