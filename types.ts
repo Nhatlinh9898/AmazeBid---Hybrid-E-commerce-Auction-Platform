@@ -72,8 +72,11 @@ export interface AvatarConfig {
   role: 'FASHION_MODEL' | 'SALES_EXPERT' | 'SINGER' | 'FRIENDLY_HOST';
   gender: 'FEMALE' | 'MALE';
   voiceTone: string;
-  image: string; // Base visualization
-  videoLoop?: string; // Idle video loop
+  image: string; // Base visualization (Thumbnail)
+  // Video States for Realism
+  idleVideo: string;    // Waiting/Listening
+  talkingVideo: string; // Explaining/Selling
+  singingVideo?: string; // Performing
 }
 
 export interface AvatarOutfit {
@@ -88,6 +91,7 @@ export interface AvatarEnvironment {
   name: string;
   image: string;
   type: 'STUDIO' | 'STAGE' | 'OUTDOOR' | 'SHOP';
+  lightingColor: string; // Hex color to blend avatar with bg
 }
 // ----------------------------
 

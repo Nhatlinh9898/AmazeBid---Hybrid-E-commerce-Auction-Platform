@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { X, User, Shirt, Image as ImageIcon, Video, Mic, Music, Sparkles, MessageSquare, Monitor, Zap, Bot } from 'lucide-react';
+import { X, User, Shirt, Image as ImageIcon, Video, Mic, Music, Sparkles, MessageSquare, Monitor, Zap, Bot, Radio, Sliders } from 'lucide-react';
 import { MOCK_AVATARS, MOCK_OUTFITS, MOCK_ENVIRONMENTS } from '../data';
 import { GoogleGenAI } from "@google/genai";
 import { Product } from '../types';
@@ -10,6 +10,8 @@ interface VirtualAvatarStudioProps {
   onClose: () => void;
   products: Product[];
 }
+
+type AvatarState = 'IDLE' | 'TALKING' | 'SINGING';
 
 const VirtualAvatarStudio: React.FC<VirtualAvatarStudioProps> = ({ isOpen, onClose, products }) => {
   const [activeTab, setActiveTab] = useState<'SETUP' | 'STUDIO' | 'LIVE'>('SETUP');
@@ -22,14 +24,45 @@ const VirtualAvatarStudio: React.FC<VirtualAvatarStudioProps> = ({ isOpen, onClo
 
   // Live State
   const [isLive, setIsLive] = useState(false);
+  const [avatarState, setAvatarState] = useState<AvatarState>('IDLE');
   const [chatHistory, setChatHistory] = useState<{user: string, text: string}[]>([]);
-  const [isTalking, setIsTalking] = useState(false);
-  const [isSinging, setIsSinging] = useState(false);
   const [lyrics, setLyrics] = useState<string[]>([]);
   
+  // Audio Visualizer Mock
+  const [audioLevel, setAudioLevel] = useState<number[]>(new Array(10).fill(10));
+
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  // Effect to handle video source switching based on state
+  useEffect(() => {
+      if (videoRef.current) {
+          let nextSrc = selectedAvatar.idleVideo;
+          if (avatarState === 'TALKING') nextSrc = selectedAvatar.talkingVideo;
+          if (avatarState === 'SINGING') nextSrc = selectedAvatar.singingVideo || selectedAvatar.talkingVideo;
+          
+          // Only change if src is different to avoid flickering loop reset
+          if (!videoRef.current.src.includes(nextSrc)) {
+              videoRef.current.src = nextSrc;
+              videoRef.current.play().catch(e => console.log("Auto-play prevented", e));
+          }
+      }
+  }, [avatarState, selectedAvatar]);
+
+  // Effect for Audio Visualizer
+  useEffect(() => {
+      if (avatarState !== 'IDLE') {
+          const interval = setInterval(() => {
+              setAudioLevel(prev => prev.map(() => Math.random() * 100));
+          }, 100);
+          return () => clearInterval(interval);
+      } else {
+          setAudioLevel(new Array(10).fill(5));
+      }
+  }, [avatarState]);
+
   // Gemini AI for Chat & Lyrics
   const generateResponse = async (userMessage: string) => {
-    setIsTalking(true);
+    setAvatarState('TALKING');
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     
     try {
@@ -49,20 +82,26 @@ const VirtualAvatarStudio: React.FC<VirtualAvatarStudioProps> = ({ isOpen, onClo
         const reply = response.text || "Cảm ơn bạn đã quan tâm!";
         setChatHistory(prev => [...prev, { user: selectedAvatar.name, text: reply }]);
         
-        // Simple speech synthesis for demo
+        // Simple speech synthesis
         const utterance = new SpeechSynthesisUtterance(reply);
         utterance.lang = 'vi-VN';
+        utterance.rate = 1.1;
+        utterance.pitch = selectedAvatar.gender === 'FEMALE' ? 1.2 : 0.9;
+        
         window.speechSynthesis.speak(utterance);
-        utterance.onend = () => setIsTalking(false);
+        
+        utterance.onend = () => {
+            setAvatarState('IDLE');
+        };
 
     } catch (e) {
         console.error(e);
-        setIsTalking(false);
+        setAvatarState('IDLE');
     }
   };
 
   const generateSong = async () => {
-      setIsSinging(true);
+      setAvatarState('SINGING');
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       try {
           const prompt = `Viết một đoạn lời bài hát ngắn (4 dòng) quảng cáo cho sản phẩm: "${selectedProduct?.title}". 
@@ -76,13 +115,13 @@ const VirtualAvatarStudio: React.FC<VirtualAvatarStudioProps> = ({ isOpen, onClo
           const songText = response.text || "Sản phẩm tuyệt vời, mua ngay đi thôi...";
           setLyrics(songText.split('\n').filter(l => l.trim()));
           
-          // Mock singing finish after 5s
+          // Mock singing finish after 8s
           setTimeout(() => {
-              setIsSinging(false);
+              setAvatarState('IDLE');
               setLyrics([]);
           }, 8000);
       } catch(e) {
-          setIsSinging(false);
+          setAvatarState('IDLE');
       }
   };
 
@@ -98,13 +137,13 @@ const VirtualAvatarStudio: React.FC<VirtualAvatarStudioProps> = ({ isOpen, onClo
               setChatHistory(prev => [...prev.slice(-5), { user: u, text: m }]);
               
               // 30% chance AI auto-replies to specific keywords
-              if (Math.random() > 0.7) {
+              if (Math.random() > 0.7 && avatarState === 'IDLE') {
                   generateResponse(m);
               }
           }, 4000);
           return () => clearInterval(interval);
       }
-  }, [isLive, selectedProduct]);
+  }, [isLive, selectedProduct, avatarState]);
 
   if (!isOpen) return null;
 
@@ -119,7 +158,7 @@ const VirtualAvatarStudio: React.FC<VirtualAvatarStudioProps> = ({ isOpen, onClo
               </div>
               <div>
                   <h2 className="text-xl font-bold flex items-center gap-2">
-                      AmazeAvatar <span className="text-purple-400">Studio</span>
+                      AmazeAvatar <span className="text-purple-400">Studio Pro</span>
                   </h2>
                   <p className="text-xs text-gray-400">Tạo nhân vật ảo & Livestream tự động</p>
               </div>
@@ -127,10 +166,10 @@ const VirtualAvatarStudio: React.FC<VirtualAvatarStudioProps> = ({ isOpen, onClo
           
           <div className="flex bg-gray-800 p-1 rounded-lg">
               <button onClick={() => setActiveTab('SETUP')} className={`px-4 py-2 rounded-md text-sm font-bold transition-all ${activeTab === 'SETUP' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:text-white'}`}>
-                  1. Thiết lập
+                  1. Nhân vật
               </button>
               <button onClick={() => setActiveTab('STUDIO')} className={`px-4 py-2 rounded-md text-sm font-bold transition-all ${activeTab === 'STUDIO' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:text-white'}`}>
-                  2. Phòng thu
+                  2. Sân khấu
               </button>
               <button onClick={() => setActiveTab('LIVE')} className={`px-4 py-2 rounded-md text-sm font-bold transition-all ${activeTab === 'LIVE' ? 'bg-red-600 text-white animate-pulse' : 'text-gray-400 hover:text-white'}`}>
                   3. Phát sóng
@@ -166,10 +205,16 @@ const VirtualAvatarStudio: React.FC<VirtualAvatarStudioProps> = ({ isOpen, onClo
                           </div>
                       </div>
                       <div>
-                          <label className="block text-xs font-bold text-gray-400 uppercase mb-3">Giọng nói AI</label>
-                          <div className="p-3 bg-gray-800 rounded-lg border border-gray-700">
-                              <p className="text-sm font-bold text-purple-300 mb-1">{selectedAvatar.voiceTone}</p>
-                              <p className="text-xs text-gray-500">Được tối ưu hóa cho livestream bán hàng.</p>
+                          <label className="block text-xs font-bold text-gray-400 uppercase mb-3">Thông số AI</label>
+                          <div className="p-3 bg-gray-800 rounded-lg border border-gray-700 space-y-2">
+                              <div className="flex justify-between text-xs">
+                                  <span className="text-gray-400">Giọng:</span>
+                                  <span className="text-white font-bold">{selectedAvatar.voiceTone}</span>
+                              </div>
+                              <div className="flex justify-between text-xs">
+                                  <span className="text-gray-400">Model:</span>
+                                  <span className="text-purple-400 font-bold">Gemini 1.5 Flash</span>
+                              </div>
                           </div>
                       </div>
                   </div>
@@ -222,6 +267,26 @@ const VirtualAvatarStudio: React.FC<VirtualAvatarStudioProps> = ({ isOpen, onClo
 
               {activeTab === 'LIVE' && (
                   <div className="space-y-6 animate-in slide-in-from-left h-full flex flex-col">
+                      <div className="bg-gray-800 p-3 rounded-xl border border-gray-700">
+                          <div className="flex justify-between items-center mb-2">
+                              <span className="text-xs font-bold text-gray-400 uppercase">Trạng thái</span>
+                              <span className={`text-xs font-bold px-2 py-0.5 rounded ${isLive ? 'bg-red-500 text-white' : 'bg-gray-600 text-gray-300'}`}>
+                                  {isLive ? 'ON AIR' : 'OFFLINE'}
+                              </span>
+                          </div>
+                          
+                          {/* Audio Visualizer */}
+                          <div className="flex items-end gap-1 h-8 justify-center">
+                              {audioLevel.map((level, i) => (
+                                  <div 
+                                    key={i} 
+                                    className="w-1.5 bg-purple-500 rounded-t-sm transition-all duration-75"
+                                    style={{ height: `${level}%` }}
+                                  />
+                              ))}
+                          </div>
+                      </div>
+
                       <div>
                           <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Sản phẩm đang bán</label>
                           <select 
@@ -239,27 +304,36 @@ const VirtualAvatarStudio: React.FC<VirtualAvatarStudioProps> = ({ isOpen, onClo
 
                       <div className="flex-1 bg-black/30 rounded-xl border border-gray-700 p-3 overflow-y-auto space-y-2">
                           {chatHistory.map((msg, idx) => (
-                              <div key={idx} className="text-xs">
+                              <div key={idx} className="text-xs animate-in slide-in-from-left-2 fade-in">
                                   <span className={`font-bold ${msg.user === selectedAvatar.name ? 'text-purple-400' : 'text-blue-400'}`}>{msg.user}:</span> <span className="text-gray-300">{msg.text}</span>
                               </div>
                           ))}
                       </div>
 
                       <div className="space-y-2">
-                          <button 
-                            onClick={generateSong}
-                            disabled={isSinging || !isLive}
-                            className="w-full bg-pink-600 hover:bg-pink-700 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 disabled:opacity-50 transition-all"
-                          >
-                              <Music size={18} /> {isSinging ? 'Đang biểu diễn...' : 'Biểu diễn bài hát'}
-                          </button>
+                          <div className="grid grid-cols-2 gap-2">
+                              <button 
+                                onClick={generateSong}
+                                disabled={avatarState !== 'IDLE' || !isLive}
+                                className="bg-pink-600 hover:bg-pink-700 text-white text-xs font-bold py-3 rounded-lg flex items-center justify-center gap-2 disabled:opacity-50 transition-all"
+                              >
+                                  <Music size={14} /> Hát
+                              </button>
+                              <button 
+                                onClick={() => setAvatarState(avatarState === 'IDLE' ? 'TALKING' : 'IDLE')}
+                                disabled={!isLive}
+                                className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-3 rounded-lg flex items-center justify-center gap-2 disabled:opacity-50 transition-all"
+                              >
+                                  <MessageSquare size={14} /> Nói
+                              </button>
+                          </div>
                           
                           <button 
                             onClick={() => setIsLive(!isLive)}
                             className={`w-full font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all ${isLive ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}`}
                           >
-                              {isLive ? <Video size={18} /> : <Zap size={18} />}
-                              {isLive ? 'Kết thúc Live' : 'Bắt đầu Livestream'}
+                              {isLive ? <Radio size={18} /> : <Zap size={18} />}
+                              {isLive ? 'Dừng phát sóng' : 'Bắt đầu Livestream'}
                           </button>
                       </div>
                   </div>
@@ -269,29 +343,47 @@ const VirtualAvatarStudio: React.FC<VirtualAvatarStudioProps> = ({ isOpen, onClo
           {/* CENTER STAGE: Preview */}
           <div className="flex-1 bg-black relative flex items-center justify-center overflow-hidden">
               
-              {/* Background Layer */}
+              {/* Background Layer with Lighting Tint */}
               <div 
                 className="absolute inset-0 bg-cover bg-center transition-all duration-700"
-                style={{ backgroundImage: `url(${selectedEnv.image})`, opacity: 0.6 }}
+                style={{ 
+                    backgroundImage: `url(${selectedEnv.image})`, 
+                    opacity: 0.8 
+                }}
+              />
+              <div 
+                className="absolute inset-0 transition-colors duration-700 pointer-events-none mix-blend-overlay"
+                style={{ backgroundColor: selectedEnv.lightingColor, opacity: 0.3 }}
               />
               
-              {/* Avatar Layer */}
+              {/* Avatar Layer - Using State Switching */}
               <div className="relative z-10 h-full max-h-[800px] aspect-[9/16] flex items-end justify-center">
-                  <video 
-                    src={selectedAvatar.videoLoop} 
-                    autoPlay loop muted 
-                    className="h-full w-full object-cover mask-image-gradient"
-                    // In a real app, this would be a WebGL canvas or transparent video
-                  />
+                  <div className="relative w-full h-full">
+                        {/* 
+                            Concept: To make it look "real", we treat the video as a "cutout" or apply filters 
+                            to blend it with the environment.
+                        */}
+                        <video 
+                            ref={videoRef}
+                            src={selectedAvatar.idleVideo} // Default source
+                            autoPlay loop muted 
+                            className="h-full w-full object-cover transition-opacity duration-300"
+                            style={{ 
+                                // Simulating Green Screen removal or blending if videos were standard
+                                maskImage: 'linear-gradient(to bottom, black 80%, transparent 100%)',
+                                filter: `drop-shadow(0 0 10px ${selectedEnv.lightingColor}50)`
+                            }}
+                        />
+                  </div>
                   
                   {/* Overlay Outfit (Mockup visual) */}
-                  <div className="absolute top-10 right-4 bg-black/50 backdrop-blur px-3 py-1 rounded-full text-xs font-bold border border-white/20 flex items-center gap-2">
+                  <div className="absolute top-10 right-4 bg-black/50 backdrop-blur px-3 py-1 rounded-full text-xs font-bold border border-white/20 flex items-center gap-2 animate-in fade-in">
                       <Shirt size={12} className="text-purple-400"/>
                       {selectedOutfit.name}
                   </div>
 
                   {/* Singing Effect */}
-                  {isSinging && (
+                  {avatarState === 'SINGING' && (
                       <div className="absolute top-1/3 inset-x-0 text-center space-y-2 animate-bounce-slow">
                           <Music size={48} className="text-pink-500 mx-auto animate-pulse" />
                           <div className="bg-black/60 backdrop-blur px-4 py-2 rounded-xl inline-block max-w-xs">
@@ -302,20 +394,20 @@ const VirtualAvatarStudio: React.FC<VirtualAvatarStudioProps> = ({ isOpen, onClo
                       </div>
                   )}
 
-                  {/* Speaking Effect */}
-                  {isTalking && (
-                      <div className="absolute bottom-32 bg-white/10 backdrop-blur border border-white/20 px-6 py-3 rounded-full flex gap-1 items-center animate-in fade-in slide-in-from-bottom-4">
-                          <div className="w-1 h-3 bg-purple-400 rounded-full animate-wave"></div>
-                          <div className="w-1 h-5 bg-purple-400 rounded-full animate-wave delay-75"></div>
-                          <div className="w-1 h-4 bg-purple-400 rounded-full animate-wave delay-150"></div>
-                          <span className="ml-2 text-sm font-bold text-white">Đang nói...</span>
+                  {/* Speaking Effect / Subtitles */}
+                  {avatarState === 'TALKING' && chatHistory.length > 0 && chatHistory[chatHistory.length - 1].user === selectedAvatar.name && (
+                      <div className="absolute bottom-32 max-w-xs bg-black/70 backdrop-blur border border-purple-500/30 px-4 py-2 rounded-xl text-center animate-in fade-in slide-in-from-bottom-2">
+                          <p className="text-white text-sm font-medium">"{chatHistory[chatHistory.length - 1].text}"</p>
                       </div>
                   )}
               </div>
 
               {/* Product Overlay (if live) */}
               {isLive && selectedProduct && (
-                  <div className="absolute top-4 left-4 bg-white text-gray-900 p-3 rounded-xl shadow-lg max-w-[200px] animate-in slide-in-from-top-4">
+                  <div className="absolute top-4 left-4 bg-white text-gray-900 p-3 rounded-xl shadow-lg max-w-[200px] animate-in slide-in-from-top-4 border-2 border-purple-500">
+                      <div className="absolute -top-2 -left-2 bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-sm">
+                          ĐANG GIỚI THIỆU
+                      </div>
                       <img src={selectedProduct.image} className="w-full h-24 object-cover rounded-lg mb-2" />
                       <p className="font-bold text-xs line-clamp-1">{selectedProduct.title}</p>
                       <p className="text-red-600 font-black">${selectedProduct.price}</p>

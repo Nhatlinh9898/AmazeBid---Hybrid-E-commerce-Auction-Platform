@@ -97,8 +97,11 @@ export const MOCK_AVATARS: AvatarConfig[] = [
     role: 'FASHION_MODEL',
     gender: 'FEMALE',
     voiceTone: 'Ngọt ngào, Truyền cảm',
-    image: 'https://images.unsplash.com/photo-1616766098956-c81f12114571?auto=format&fit=crop&q=80&w=600', // Model pose
-    videoLoop: 'https://assets.mixkit.co/videos/preview/mixkit-girl-in-neon-sign-1232-large.mp4'
+    image: 'https://images.unsplash.com/photo-1616766098956-c81f12114571?auto=format&fit=crop&q=80&w=600',
+    // Using distinct videos for Idle vs Talking
+    idleVideo: 'https://assets.mixkit.co/videos/preview/mixkit-girl-in-neon-sign-1232-large.mp4',
+    talkingVideo: 'https://assets.mixkit.co/videos/preview/mixkit-woman-talking-on-video-call-42888-large.mp4',
+    singingVideo: 'https://assets.mixkit.co/videos/preview/mixkit-young-woman-singing-into-a-microphone-41707-large.mp4'
   },
   {
     id: 'av_2',
@@ -106,8 +109,9 @@ export const MOCK_AVATARS: AvatarConfig[] = [
     role: 'SALES_EXPERT',
     gender: 'MALE',
     voiceTone: 'Chuyên nghiệp, Tự tin',
-    image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=600', // Male model
-    videoLoop: 'https://assets.mixkit.co/videos/preview/mixkit-man-working-on-his-laptop-308-large.mp4'
+    image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=600',
+    idleVideo: 'https://assets.mixkit.co/videos/preview/mixkit-man-working-on-his-laptop-308-large.mp4',
+    talkingVideo: 'https://assets.mixkit.co/videos/preview/mixkit-young-man-blogger-talking-to-camera-42890-large.mp4'
   },
   {
     id: 'av_3',
@@ -115,8 +119,10 @@ export const MOCK_AVATARS: AvatarConfig[] = [
     role: 'SINGER',
     gender: 'FEMALE',
     voiceTone: 'Năng động, Cao vút',
-    image: 'https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&q=80&w=600', // Singer style
-    videoLoop: 'https://assets.mixkit.co/videos/preview/mixkit-woman-dancing-in-the-dark-40995-large.mp4'
+    image: 'https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&q=80&w=600',
+    idleVideo: 'https://assets.mixkit.co/videos/preview/mixkit-woman-dancing-in-the-dark-40995-large.mp4',
+    talkingVideo: 'https://assets.mixkit.co/videos/preview/mixkit-woman-talking-on-a-video-call-42939-large.mp4',
+    singingVideo: 'https://assets.mixkit.co/videos/preview/mixkit-singer-performing-on-stage-with-lights-42568-large.mp4'
   }
 ];
 
@@ -128,9 +134,27 @@ export const MOCK_OUTFITS: AvatarOutfit[] = [
 ];
 
 export const MOCK_ENVIRONMENTS: AvatarEnvironment[] = [
-  { id: 'env_1', name: 'Sân khấu Ánh sáng', type: 'STAGE', image: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&q=80&w=800' },
-  { id: 'env_2', name: 'Studio Thời trang', type: 'STUDIO', image: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&q=80&w=800' },
-  { id: 'env_3', name: 'Phòng khách Sang trọng', type: 'SHOP', image: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&q=80&w=800' },
+  { 
+      id: 'env_1', 
+      name: 'Sân khấu Ánh sáng', 
+      type: 'STAGE', 
+      image: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&q=80&w=800',
+      lightingColor: '#9333ea' // Purple tint
+  },
+  { 
+      id: 'env_2', 
+      name: 'Studio Thời trang', 
+      type: 'STUDIO', 
+      image: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&q=80&w=800',
+      lightingColor: '#ffffff' // Neutral
+  },
+  { 
+      id: 'env_3', 
+      name: 'Phòng khách Sang trọng', 
+      type: 'SHOP', 
+      image: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&q=80&w=800',
+      lightingColor: '#f59e0b' // Warm/Gold tint
+  },
 ];
 
 // --- END MOCK ---
