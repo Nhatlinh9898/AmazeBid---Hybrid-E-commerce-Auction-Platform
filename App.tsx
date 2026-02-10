@@ -14,7 +14,8 @@ import CustomerServiceModal from './components/CustomerServiceModal';
 import ContentStudioModal from './components/ContentStudioModal'; 
 import SuperDealsModal from './components/SuperDealsModal'; 
 import SellerDashboard from './components/SellerDashboard'; 
-import AdminDashboard from './components/AdminDashboard'; // New Import
+import AdminDashboard from './components/AdminDashboard'; 
+import VirtualAvatarStudio from './components/VirtualAvatarStudio'; // New Import
 import { AuthProvider, useAuth } from './context/AuthContext'; 
 
 import { MOCK_PRODUCTS, MOCK_STREAMS } from './data';
@@ -44,7 +45,8 @@ const InnerApp: React.FC = () => {
   const [isContentStudioOpen, setIsContentStudioOpen] = useState(false);
   const [isSuperDealsOpen, setIsSuperDealsOpen] = useState(false);
   const [isSellerDashboardOpen, setIsSellerDashboardOpen] = useState(false);
-  const [isAdminDashboardOpen, setIsAdminDashboardOpen] = useState(false); // New State
+  const [isAdminDashboardOpen, setIsAdminDashboardOpen] = useState(false);
+  const [isAvatarStudioOpen, setIsAvatarStudioOpen] = useState(false); // New State
 
   // Live Stream States
   const [activeStream, setActiveStream] = useState<LiveStream | null>(null);
@@ -243,6 +245,7 @@ const InnerApp: React.FC = () => {
         onOpenSuperDeals={() => setIsSuperDealsOpen(true)}
         onOpenSellerDashboard={() => setIsSellerDashboardOpen(true)}
         onOpenAdminDashboard={() => setIsAdminDashboardOpen(true)}
+        onOpenAvatarStudio={() => setIsAvatarStudioOpen(true)}
       />
 
       <main className="max-w-[1500px] mx-auto px-4 py-6">
@@ -527,6 +530,13 @@ const InnerApp: React.FC = () => {
       <AdminDashboard 
         isOpen={isAdminDashboardOpen}
         onClose={() => setIsAdminDashboardOpen(false)}
+      />
+
+      {/* Virtual Avatar Studio (New) */}
+      <VirtualAvatarStudio
+        isOpen={isAvatarStudioOpen}
+        onClose={() => setIsAvatarStudioOpen(false)}
+        products={myProducts}
       />
 
       {/* Order Dashboard */}

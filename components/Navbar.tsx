@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Search, ShoppingCart, User as UserIcon, MapPin, Gavel, LayoutGrid, PlusCircle, Package, Video, LogIn, ChevronDown, Sparkles, Zap, BarChart3, Shield } from 'lucide-react';
+import { Search, ShoppingCart, User as UserIcon, MapPin, Gavel, LayoutGrid, PlusCircle, Package, Video, LogIn, ChevronDown, Sparkles, Zap, BarChart3, Shield, Bot } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 interface NavbarProps {
@@ -17,12 +17,13 @@ interface NavbarProps {
   onOpenContentStudio: () => void;
   onOpenSuperDeals: () => void;
   onOpenSellerDashboard: () => void;
-  onOpenAdminDashboard: () => void; // New Prop
+  onOpenAdminDashboard: () => void;
+  onOpenAvatarStudio: () => void; // New Prop
 }
 
 const Navbar: React.FC<NavbarProps> = ({ 
   cartCount, onSearch, openCart, openSellModal, openOrders, 
-  onOpenLiveStudio, onViewLiveStreams, onOpenAuth, onOpenProfile, onOpenCustomerService, onOpenContentStudio, onOpenSuperDeals, onOpenSellerDashboard, onOpenAdminDashboard
+  onOpenLiveStudio, onViewLiveStreams, onOpenAuth, onOpenProfile, onOpenCustomerService, onOpenContentStudio, onOpenSuperDeals, onOpenSellerDashboard, onOpenAdminDashboard, onOpenAvatarStudio
 }) => {
   const { user } = useAuth();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -158,6 +159,14 @@ const Navbar: React.FC<NavbarProps> = ({
             className="hover:border-white border border-transparent p-1 rounded cursor-pointer font-bold text-white flex items-center gap-1"
         >
             <BarChart3 size={14} className="text-[#febd69]" /> Kênh Người Bán
+        </span>
+
+        {/* Avatar Studio - New */}
+        <span 
+            onClick={user ? onOpenAvatarStudio : onOpenAuth}
+            className="hover:border-white border border-transparent p-1 rounded cursor-pointer font-bold text-purple-400 flex items-center gap-1"
+        >
+            <Bot size={14} /> Avatar Studio
         </span>
 
         <span 

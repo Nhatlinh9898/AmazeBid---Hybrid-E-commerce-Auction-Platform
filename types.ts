@@ -65,6 +65,32 @@ export interface Transaction {
   status: 'COMPLETED' | 'PENDING' | 'FAILED';
 }
 
+// --- Virtual Avatar Types ---
+export interface AvatarConfig {
+  id: string;
+  name: string;
+  role: 'FASHION_MODEL' | 'SALES_EXPERT' | 'SINGER' | 'FRIENDLY_HOST';
+  gender: 'FEMALE' | 'MALE';
+  voiceTone: string;
+  image: string; // Base visualization
+  videoLoop?: string; // Idle video loop
+}
+
+export interface AvatarOutfit {
+  id: string;
+  name: string;
+  image: string; // Overlay image or texture
+  style: 'CASUAL' | 'EVENING' | 'STREETWEAR' | 'SPORT';
+}
+
+export interface AvatarEnvironment {
+  id: string;
+  name: string;
+  image: string;
+  type: 'STUDIO' | 'STAGE' | 'OUTDOOR' | 'SHOP';
+}
+// ----------------------------
+
 export interface Product {
   id: string;
   title: string;

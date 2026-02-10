@@ -1,5 +1,5 @@
 
-import { Product, ItemType, OrderStatus, LiveStream, User, Transaction } from './types';
+import { Product, ItemType, OrderStatus, LiveStream, User, Transaction, AvatarConfig, AvatarOutfit, AvatarEnvironment } from './types';
 
 // Mock Affiliate Network (Kho hàng chung)
 export const AFFILIATE_NETWORK_ITEMS = [
@@ -87,6 +87,53 @@ export const PRODUCT_TEMPLATES = [
     image: "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?auto=format&fit=crop&q=80&w=400"
   }
 ];
+
+// --- MOCK VIRTUAL AVATAR ASSETS ---
+
+export const MOCK_AVATARS: AvatarConfig[] = [
+  {
+    id: 'av_1',
+    name: 'A.I. Mai Linh',
+    role: 'FASHION_MODEL',
+    gender: 'FEMALE',
+    voiceTone: 'Ngọt ngào, Truyền cảm',
+    image: 'https://images.unsplash.com/photo-1616766098956-c81f12114571?auto=format&fit=crop&q=80&w=600', // Model pose
+    videoLoop: 'https://assets.mixkit.co/videos/preview/mixkit-girl-in-neon-sign-1232-large.mp4'
+  },
+  {
+    id: 'av_2',
+    name: 'Virtual Kevin',
+    role: 'SALES_EXPERT',
+    gender: 'MALE',
+    voiceTone: 'Chuyên nghiệp, Tự tin',
+    image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=600', // Male model
+    videoLoop: 'https://assets.mixkit.co/videos/preview/mixkit-man-working-on-his-laptop-308-large.mp4'
+  },
+  {
+    id: 'av_3',
+    name: 'Cyber Idol Ruby',
+    role: 'SINGER',
+    gender: 'FEMALE',
+    voiceTone: 'Năng động, Cao vút',
+    image: 'https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&q=80&w=600', // Singer style
+    videoLoop: 'https://assets.mixkit.co/videos/preview/mixkit-woman-dancing-in-the-dark-40995-large.mp4'
+  }
+];
+
+export const MOCK_OUTFITS: AvatarOutfit[] = [
+  { id: 'out_1', name: 'Váy Dạ Hội Đỏ', style: 'EVENING', image: 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?auto=format&fit=crop&q=80&w=200' },
+  { id: 'out_2', name: 'Streetwear Cool', style: 'STREETWEAR', image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&q=80&w=200' },
+  { id: 'out_3', name: 'Công sở Thanh lịch', style: 'CASUAL', image: 'https://images.unsplash.com/photo-1487222477894-8943e31ef7b2?auto=format&fit=crop&q=80&w=200' },
+  { id: 'out_4', name: 'Thể thao Năng động', style: 'SPORT', image: 'https://images.unsplash.com/photo-1483721310020-03333e577078?auto=format&fit=crop&q=80&w=200' },
+];
+
+export const MOCK_ENVIRONMENTS: AvatarEnvironment[] = [
+  { id: 'env_1', name: 'Sân khấu Ánh sáng', type: 'STAGE', image: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&q=80&w=800' },
+  { id: 'env_2', name: 'Studio Thời trang', type: 'STUDIO', image: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&q=80&w=800' },
+  { id: 'env_3', name: 'Phòng khách Sang trọng', type: 'SHOP', image: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&q=80&w=800' },
+];
+
+// --- END MOCK ---
 
 export const MOCK_STREAMS: LiveStream[] = [
   {
